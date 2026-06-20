@@ -1,6 +1,10 @@
-# QQ 空间历史恢复工具 (qzone-history)
+<div align="center">
 
-> **🌐 语言 / Language / Langue：** [**简体中文**](README.md) · [English](README.en.md) · [Français](README.fr.md)
+# QQ 空间历史恢复工具
+
+**qzone-history** — 找回那些已消失的说说与留言
+
+<br>
 
 [![Version](https://img.shields.io/badge/version-v0.0.1-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -8,11 +12,20 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](#从源码编译)
 [![GitHub](https://img.shields.io/badge/GitHub-ZHChen2000/qzone--history-181717?style=flat&logo=github)](https://github.com/ZHChen2000/qzone-history)
 
-**作者：[ZHChen](https://github.com/ZHChen2000)** · **联系：QQ 1415094395**
+<br>
 
-从 QQ 空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，并导出为本地 JSON 与 HTML 浏览页。
+**作者：[ZHChen](https://github.com/ZHChen2000)** &nbsp;·&nbsp; **联系：QQ 1415094395**
 
-> 仅供个人备份**本人** QQ 空间数据，请遵守腾讯相关服务条款。
+<br>
+
+从 QQ 空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，<br>
+并导出为本地 JSON 与 HTML 浏览页。
+
+<br>
+
+<sub>仅供个人备份<strong>本人</strong> QQ 空间数据 · 请遵守腾讯相关服务条款</sub>
+
+</div>
 
 ---
 
