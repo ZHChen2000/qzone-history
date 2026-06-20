@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QQ空间历史 · {{.UserQQ}}</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --primary: #12b7f5;
+      --primary-dark: #0e9fd9;
+      --accent: #ffc107;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --reconstructed: #f59e0b;
+      --shadow: 0 2px 12px rgba(0,0,0,.08);
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #12b7f5 0%, #0ea5e9 50%, #38bdf8 100%);
+      color: #fff;
+      padding: 28px 24px 20px;
+      box-shadow: var(--shadow);
+    }
+    .header-inner { max-width: 960px; margin: 0 auto; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .header .meta { opacity: .9; font-size: .875rem; }
+    .stats {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px;
+    }
+    .stat {
+      background: rgba(255,255,255,.18);
+      backdrop-filter: blur(4px);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: .85rem;
+    }
+    .stat strong { font-size: 1.1rem; display: block; }
+    .toolbar {
+      max-width: 960px; margin: 0 auto;
+      padding: 16px 24px 0;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab {
+      border: none; background: var(--card);
+      color: var(--muted); padding: 8px 16px;
+      border-radius: 999px; cursor: pointer;
+      font-size: .9rem; box-shadow: var(--shadow);
+      transition: all .2s;
+    }
+    .tab:hover { color: var(--primary); }
+    .tab.active {
+      background: var(--primary); color: #fff;
+    }
+    .search-box {
+      flex: 1; min-width: 180px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .search-box input, .filter-select {
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px;
+      font-size: .9rem; background: var(--card);
+      outline: none;
+    }
+    .search-box input { flex: 1; }
+    .search-box input:focus, .filter-select:focus {
+      border-color: var(--primary);
+    }
+    .main { max-width: 960px; margin: 0 auto; padding: 16px 24px 48px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 12px; margin-bottom: 10px;
+    }
+    .time { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .badge {
+      display: inline-block; font-size: .72rem;
+      padding: 2px 8px; border-radius: 999px;
+      background: #dbeafe; color: #1d4ed8;
+      margin-left: 6px; vertical-align: middle;
+    }
+    .badge.reconstructed { background: #fef3c7; color: #b45309; }
+    .badge.deleted { background: #fee2e2; color: #b91c1c; }
+    .badge.type { background: #ecfdf5; color: #047857; }
+    .content {
+      font-size: .95rem; white-space: pre-wrap; word-break: break-word;
+    }
+    .content .emoji {
+      display: inline-block; width: 22px; height: 22px;
+      vertical-align: text-bottom; margin: 0 1px;
+    }
+    .images {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px; margin-top: 12px;
+    }
+    .images img {
+      width: 100%; aspect-ratio: 1; object-fit: cover;
+      border-radius: 8px; cursor: pointer;
+      background: #f3f4f6; border: 1px solid var(--border);
+      transition: transform .15s;
+    }
+    .images img:hover { transform: scale(1.02); }
+    .meta-row {
+      margin-top: 10px; font-size: .82rem; color: var(--muted);
+      display: flex; flex-wrap: wrap; gap: 12px;
+    }
+    .comments {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+    .comment {
+      font-size: .88rem; padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .comment:last-child { border-bottom: none; }
+    .comment .qq { color: var(--primary); font-weight: 500; }
+    .empty {
+      text-align: center; color: var(--muted);
+      padding: 48px 20px; font-size: .95rem;
+    }
+    .sender { font-size: .85rem; color: var(--primary); font-weight: 500; }
+    .activity-item .type-label { font-weight: 600; margin-right: 6px; }
+    .lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.85); z-index: 1000;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 95vw; max-height: 90vh; border-radius: 8px; }
+    .lightbox-close {
+      position: absolute; top: 20px; right: 24px;
+      color: #fff; font-size: 2rem; cursor: pointer; line-height: 1;
+    }
+    @media (max-width: 640px) {
+      .header { padding: 20px 16px 16px; }
+      .toolbar, .main { padding-left: 16px; padding-right: 16px; }
+      .card { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <h1>QQ空间历史还原</h1>
+      <div class="meta">QQ {{.UserQQ}} · 生成于 {{.GeneratedAt}}</div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" data-panel="moments">说说</button>
+      <button class="tab" data-panel="board">留言板</button>
+      <button class="tab" data-panel="activities">活动记录</button>
+    </div>
+    <div class="search-box">
+      <input type="search" id="search" placeholder="搜索内容…" autocomplete="off">
+      <select class="filter-select" id="moment-filter" style="display:none">
+        <option value="all">全部说说</option>
+        <option value="visible">未删除</option>
+        <option value="reconstructed">已重建</option>
+      </select>
+      <select class="filter-select" id="activity-filter" style="display:none">
+        <option value="all">全部类型</option>
+        <option value="0">说说</option>
+        <option value="2">点赞</option>
+        <option value="3">评论</option>
+        <option value="4">留言</option>
+        <option value="5">回复</option>
+        <option value="6">访问</option>
+      </select>
+    </div>
+  </div>
+
+  <main class="main">
+    <section class="panel active" id="panel-moments"></section>
+    <section class="panel" id="panel-board"></section>
+    <section class="panel" id="panel-activities"></section>
+  </main>
+
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+
+  <script>
+    function decodePayload(b64) {
+      const binary = atob(b64);
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    }
+    const DATA = JSON.parse(decodePayload("{{.PayloadB64}}"));
+
+    const ACTIVITY_TYPES = {
+      0: '说说', 1: '转发', 2: '点赞', 3: '评论',
+      4: '留言', 5: '回复', 6: '访问', 7: '其他'
+    };
+
+    let currentPanel = 'moments';
+    let searchQuery = '';
+
+    function esc(s) {
+      if (!s) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function cleanText(s) {
+      if (!s) return '';
+      return s.replace(/\\t/g, '').replace(/\t/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function extractMomentContent(text) {
+      const s = cleanText(text);
+      const colonIdx = s.indexOf('：');
+      if (colonIdx > 0 && colonIdx < 40) {
+        const body = s.slice(colonIdx + 1).trim();
+        if (body) return body;
+      }
+      return s;
+    }
+
+    function formatContent(text, isMoment) {
+      if (!text) return '<span style="color:#9ca3af">（无文字内容）</span>';
+      const plain = isMoment ? extractMomentContent(text) : cleanText(text);
+      let html = esc(plain);
+      html = html.replace(/\[em\](e\d+)\[\/em\]/gi, (_, code) =>
+        `<img class="emoji" src="https://qzonestyle.gtimg.cn/qzone/em/${code}.gif" alt="[表情]" loading="lazy" onerror="this.style.display='none'">`
+      );
+      return html;
+    }
+
+    function parseTime(item) {
+      const ts = item.timestamp;
+      if (ts && !ts.startsWith('0001-01-01')) {
+        const d = new Date(ts);
+        if (!isNaN(d)) return d;
+      }
+      const tt = cleanText(item.timeText);
+      if (tt) return { label: tt, sortKey: 0 };
+      return { label: '未知时间', sortKey: 0 };
+    }
+
+    function timeLabel(item) {
+      const t = parseTime(item);
+      if (t instanceof Date) {
+        return t.toLocaleString('zh-CN', { hour12: false });
+      }
+      return t.label || '未知时间';
+    }
+
+    function sortKey(item) {
+      const t = parseTime(item);
+      if (t instanceof Date) return t.getTime();
+      return 0;
+    }
+
+    function renderImages(urls) {
+      if (!urls || !urls.length) return '';
+      return `<div class="images">${urls.map(u =>
+        `<img src="${esc(u)}" alt="图片" loading="lazy" onclick="openLightbox('${esc(u).replace(/'/g, "\\'")}')">`
+      ).join('')}</div>`;
+    }
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.add('open');
+    }
+
+    document.getElementById('lightbox-close').onclick = () =>
+      document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox').onclick = (e) => {
+      if (e.target.id === 'lightbox') e.target.classList.remove('open');
+    };
+
+    function renderStats() {
+      const m = DATA.moments || [];
+      const visible = m.filter(x => !x.isReconstructed).length;
+      const recon = m.filter(x => x.isReconstructed).length;
+      document.getElementById('stats').innerHTML = `
+        <div class="stat"><strong>${m.length}</strong>说说（${visible} 未删 + ${recon} 重建）</div>
+        <div class="stat"><strong>${(DATA.boardMessages||[]).length}</strong>留言板</div>
+        <div class="stat"><strong>${(DATA.activities||[]).length}</strong>活动记录</div>
+      `;
+    }
+
+    function matchesSearch(text) {
+      if (!searchQuery) return true;
+      return cleanText(text).toLowerCase().includes(searchQuery.toLowerCase());
+    }
+
+    function renderMoments() {
+      const filter = document.getElementById('moment-filter').value;
+      let items = [...(DATA.moments || [])];
+      items.sort((a, b) => sortKey(b) - sortKey(a));
+
+      if (filter === 'visible') items = items.filter(x => !x.isReconstructed);
+      if (filter === 'reconstructed') items = items.filter(x => x.isReconstructed);
+      items = items.filter(x => matchesSearch(x.content));
+
+      const el = document.getElementById('panel-moments');
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">没有匹配的说说</div>';
+        return;
+      }
+      el.innerHTML = items.map(m => {
+        const badges = [];
+        if (m.isReconstructed) badges.push('<span class="badge reconstructed">已重建</span>');
+        if (m.isDeleted) badges.push('<span class="badge deleted">已删除</span>');
+        const comments = (m.comments || []).filter(c => c && c.content);
+        const commentsHtml = comments.length ? `
+          <div class="comments">
+            ${comments.map(c => `
+              <div class="comment">
+                <span class="qq">${esc(c.userQQ || '匿名')}</span>：
+                ${formatContent(c.content)}
+                <span style="color:#9ca3af;margin-left:6px">${esc(cleanText(c.timeText) || '')}</span>
+              </div>`).join('')}
+          </div>` : '';
+        return `
+          <article class="card">
+            <div class="card-header">
+              <div>${badges.join('')}</div>
+              <time class="time">${esc(timeLabel(m))}</time>
+            </div>
+            <div class="content">${formatContent(m.content, true)}</div>
+            ${renderImages(m.imageURLs)}
+            <div class="meta-row">
+              ${m.likes ? `<span>👍 ${m.likes}</span>` : ''}
+              ${m.views ? `<span>👁 ${m.views}</span>` : ''}
+              ${comments.length ? `<span>💬 ${comments.length} 条评论</span>` : ''}
+            </div>
+            ${commentsHtml}
+          </article>`;
+      }).join('');
+    }
+
+    function renderBoard() {
+      let items = [...(DATA.boardMessages || [])];
+      items.sort((a, b) => sortKey(b) - sortKey(a));
+      items = items.filter(x => matchesSearch(x.content));
+
+      const el = document.getElementById('panel-board');
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">没有匹配的留言</div>';
+        return;
+      }
+      el.innerHTML = items.map(b => `
+        <article class="card">
+          <div class="card-header">
+            <span class="sender">QQ ${esc(b.senderQQ)}</span>
+            <time class="time">${esc(timeLabel(b))}</time>
+          </div>
+          <div class="content">${formatContent(b.content)}</div>
+        </article>
+      `).join('');
+    }
+
+    function renderActivities() {
+      const filter = document.getElementById('activity-filter').value;
+      let items = [...(DATA.activities || [])];
+      items.sort((a, b) => sortKey(b) - sortKey(a));
+      if (filter !== 'all') items = items.filter(x => String(x.type) === filter);
+      items = items.filter(x => matchesSearch(x.content) || matchesSearch(x.senderName));
+
+      const el = document.getElementById('panel-activities');
+      if (!items.length) {
+        el.innerHTML = '<div class="empty">没有匹配的活动</div>';
+        return;
+      }
+      el.innerHTML = items.map(a => {
+        const typeName = ACTIVITY_TYPES[a.type] || '其他';
+        const content = cleanText(a.content);
+        return `
+          <article class="card activity-item">
+            <div class="card-header">
+              <div>
+                <span class="badge type">${esc(typeName)}</span>
+                <span class="sender">${esc(a.senderName || a.senderQQ || '未知')}</span>
+              </div>
+              <time class="time">${esc(timeLabel(a))}</time>
+            </div>
+            ${content ? `<div class="content">${formatContent(a.content)}</div>` : ''}
+            ${renderImages(a.imageURLs)}
+          </article>`;
+      }).join('');
+    }
+
+    function renderAll() {
+      renderStats();
+      renderMoments();
+      renderBoard();
+      renderActivities();
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPanel = btn.dataset.panel;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + currentPanel).classList.add('active');
+        document.getElementById('moment-filter').style.display = currentPanel === 'moments' ? '' : 'none';
+        document.getElementById('activity-filter').style.display = currentPanel === 'activities' ? '' : 'none';
+      });
+    });
+
+    document.getElementById('search').addEventListener('input', e => {
+      searchQuery = e.target.value.trim();
+      renderAll();
+    });
+    document.getElementById('moment-filter').addEventListener('change', renderMoments);
+    document.getElementById('activity-filter').addEventListener('change', renderActivities);
+
+    renderAll();
+  </script>
+</body>
+</html>

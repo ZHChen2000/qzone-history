@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QQ空间历史恢复</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #4f8cff;
+      --accent2: #3dd68c;
+      --warn: #f5a623;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 1.5rem; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+    .grid { display: grid; gap: 16px; }
+    @media (min-width: 720px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 12px; color: var(--accent); }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 0.95rem; font-weight: 600; transition: opacity .15s;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .btn-success { background: var(--accent2); color: #0f1419; }
+    .btn-danger { background: #5c3d3d; color: #ffb4b4; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .qr-box {
+      text-align: center; padding: 16px;
+      background: #fff; border-radius: 8px; min-height: 220px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qr-box img { max-width: 200px; }
+    .status-bar {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;
+      font-size: 0.85rem;
+    }
+    .status-bar span { background: var(--bg); padding: 4px 10px; border-radius: 6px; }
+    .progress-wrap {
+      height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin: 10px 0;
+    }
+    .progress-bar {
+      height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%; transition: width .3s;
+    }
+    .log-box {
+      height: 280px; overflow-y: auto; font-family: Consolas, monospace;
+      font-size: 0.8rem; background: var(--bg); border-radius: 8px;
+      padding: 12px; border: 1px solid var(--border);
+    }
+    .log-line { margin-bottom: 4px; }
+    .log-time { color: var(--muted); margin-right: 8px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-run { background: #2a4a7a; color: #9ec5ff; }
+    .badge-done { background: #1e4d38; color: #7dffb8; }
+    .badge-idle { background: var(--border); color: var(--muted); }
+    .user-info { font-size: 0.9rem; margin-top: 8px; }
+    a.link { color: var(--accent); }
+    .footer { margin-top: 24px; text-align: center; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>QQ空间历史恢复工具</h1>
+    <p class="sub">后台运行，不影响您使用电脑。关闭本页面不会停止任务，重新打开即可继续查看进度。</p>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>① 扫码登录</h2>
+        <div class="qr-box" id="qrBox">
+          <span style="color:#666">点击下方按钮获取二维码</span>
+        </div>
+        <div class="user-info" id="userInfo"></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="btnQR" onclick="fetchQR()">获取/刷新二维码</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>② 抓取设置</h2>
+        <label for="targetYear">至少恢复到哪一年（及更早）</label>
+        <input type="number" id="targetYear" value="2017" min="2005" max="2026" onchange="recommendOffset()">
+        <p class="hint" id="offsetHint">选择年份后自动推荐 offset</p>
+        <label for="maxOffset" style="margin-top:12px">Max Offset（可手动调大）</label>
+        <input type="number" id="maxOffset" value="25000" min="500" step="500">
+        <p class="hint">offset 与年份<strong>非线性</strong>。若恢复后最早时间仍不够早，请逐步调大（如 +10000）后重试。</p>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnStart" onclick="startRun()">开始恢复</button>
+          <button class="btn btn-secondary" id="btnStop" onclick="stopRun()" disabled>停止</button>
+          <button class="btn btn-success" id="btnOpen" onclick="openViewer()" disabled>打开浏览页</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>③ 运行状态 <span class="badge badge-idle" id="statusBadge">等待</span></h2>
+      <div class="status-bar">
+        <span>阶段: <strong id="phase">-</strong></span>
+        <span>活动数: <strong id="actCount">0</strong></span>
+        <span>最早: <strong id="earliest">-</strong></span>
+        <span>QQ: <strong id="userQQ">-</strong></span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="log-box" id="logBox"></div>
+    </div>
+
+    <p class="footer">
+      作者：ZHChen &nbsp;|&nbsp; 联系方式：QQ 1415094395
+      &nbsp;|&nbsp;
+      <button class="btn btn-danger" style="padding:6px 14px;font-size:0.8rem" onclick="exitApp()">关闭并结束进程</button>
+    </p>
+  </div>
+
+  <script>
+    let qrsig = '';
+    let pollTimer = null;
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || '请求失败');
+      return j;
+    }
+
+    async function fetchQR() {
+      document.getElementById('btnQR').disabled = true;
+      try {
+        const j = await api('/api/login/qrcode', { method: 'POST' });
+        qrsig = j.qrsig;
+        document.getElementById('qrBox').innerHTML =
+          '<img src="data:image/png;base64,' + j.qrcode + '" alt="QQ扫码">';
+        pollLogin();
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        document.getElementById('btnQR').disabled = false;
+      }
+    }
+
+    function pollLogin() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        if (!qrsig) return;
+        try {
+          const j = await api('/api/login/poll?qrsig=' + encodeURIComponent(qrsig));
+          if (j.loggedIn) {
+            clearInterval(pollTimer);
+            document.getElementById('userInfo').textContent =
+              '已登录: ' + j.nickname + ' (' + j.qq + ')';
+            document.getElementById('qrBox').innerHTML =
+              '<span style="color:#2d8a4e;font-size:1.1rem">✓ 登录成功</span>';
+          } else if (j.expired) {
+            clearInterval(pollTimer);
+            document.getElementById('qrBox').innerHTML =
+              '<span style="color:#c44">二维码已过期，请刷新</span>';
+          } else if (j.message) {
+            document.getElementById('userInfo').textContent = j.message;
+          }
+        } catch (_) {}
+      }, 2000);
+    }
+
+    async function recommendOffset() {
+      const y = document.getElementById('targetYear').value;
+      try {
+        const j = await api('/api/recommend?year=' + y);
+        document.getElementById('maxOffset').value = j.maxOffset;
+        document.getElementById('offsetHint').textContent = j.hint;
+      } catch (e) {
+        document.getElementById('offsetHint').textContent = e.message;
+      }
+    }
+
+    async function startRun() {
+      const targetYear = parseInt(document.getElementById('targetYear').value, 10);
+      const maxOffset = parseInt(document.getElementById('maxOffset').value, 10);
+      try {
+        await api('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetYear, maxOffset })
+        });
+        setRunningUI(true);
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function stopRun() {
+      try {
+        await api('/api/stop', { method: 'POST' });
+        setRunningUI(false);
+        document.getElementById('statusBadge').textContent = '正在停止';
+        document.getElementById('statusBadge').className = 'badge badge-run';
+        document.getElementById('phase').textContent = '正在停止';
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function openViewer() {
+      try {
+        const j = await api('/api/open-viewer', { method: 'POST' });
+        if (j.url) window.open(j.url, '_blank');
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    async function exitApp() {
+      if (!confirm('确定要关闭控制台并结束程序吗？\n若恢复任务正在运行，将被中断。')) {
+        return;
+      }
+      try {
+        await api('/api/exit', { method: 'POST' });
+      } catch (_) {}
+      document.querySelector('.wrap').innerHTML =
+        '<h1>程序已退出</h1><p class="sub">后台进程已结束，可直接关闭此浏览器标签页。</p>';
+    }
+
+    function setRunningUI(running) {
+      document.getElementById('btnStart').disabled = running;
+      document.getElementById('btnStop').disabled = !running;
+    }
+
+    function appendLog(e) {
+      const box = document.getElementById('logBox');
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = '<span class="log-time">' + e.time + '</span>' + escapeHtml(e.message);
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function updateStatus(s) {
+      document.getElementById('phase').textContent = s.phase || '-';
+      document.getElementById('actCount').textContent = s.activityCount || 0;
+      document.getElementById('earliest').textContent = s.earliestDate || '-';
+      document.getElementById('userQQ').textContent = s.userQQ || '-';
+      document.getElementById('progressBar').style.width = (s.progressPercent || 0) + '%';
+      const badge = document.getElementById('statusBadge');
+      if (s.running) {
+        badge.textContent = '运行中';
+        badge.className = 'badge badge-run';
+        setRunningUI(true);
+      } else if (s.phase === '已停止' || s.phase === '正在停止') {
+        badge.textContent = s.phase;
+        badge.className = 'badge';
+        badge.style.background = '#4a3d2a';
+        badge.style.color = '#ffcc80';
+        setRunningUI(false);
+      } else if (s.done) {
+        badge.textContent = '已完成';
+        badge.className = 'badge badge-done';
+        setRunningUI(false);
+        document.getElementById('btnOpen').disabled = false;
+      } else if (s.error) {
+        badge.textContent = '失败';
+        badge.className = 'badge';
+        badge.style.background = '#5c2a2a';
+        badge.style.color = '#ff9999';
+        setRunningUI(false);
+      } else {
+        badge.textContent = '等待';
+        badge.className = 'badge badge-idle';
+      }
+    }
+
+    function connectSSE() {
+      const es = new EventSource('/api/events');
+      es.addEventListener('log', ev => appendLog(JSON.parse(ev.data)));
+      es.addEventListener('status', ev => updateStatus(JSON.parse(ev.data)));
+      es.onerror = () => {
+        es.close();
+        setTimeout(connectSSE, 3000);
+      };
+    }
+
+    async function init() {
+      await recommendOffset();
+      connectSSE();
+      try {
+        const j = await api('/api/status');
+        updateStatus(j);
+        (j.logs || []).forEach(appendLog);
+        if (j.loggedIn) {
+          document.getElementById('userInfo').textContent =
+            '已登录: ' + j.nickname + ' (' + j.qq + ')';
+          document.getElementById('qrBox').innerHTML =
+            '<span style="color:#2d8a4e">已登录</span>';
+        }
+        if (j.viewerPath) document.getElementById('btnOpen').disabled = false;
+      } catch (_) {}
+    }
+    init();
+  </script>
+</body>
+</html>

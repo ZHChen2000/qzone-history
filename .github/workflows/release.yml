@@ -1,0 +1,37 @@
+name: Release qzone-history
+
+permissions:
+  id-token: write
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # 官方推荐，确保完整的历史记录，GoReleaser 需要使用 tag 信息
+
+      # 设置 Go 环境，使用 go.mod 中定义的版本
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"  # 自动读取 go.mod 中的 Go 版本
+
+      # 运行 GoReleaser 来构建、打包和发布版本
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser  # GoReleaser 的发行版本
+          version: latest  # 使用最新版本的 GoReleaser
+          args: release --clean  # 发布并清理临时文件
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub token 授权 GoReleaser 发布版本

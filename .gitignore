@@ -1,0 +1,29 @@
+# 用户运行时产生的数据（切勿提交）
+session.db
+app.db
+*.db
+qrcode.png
+.env
+.env.*
+
+# 用户导出目录与文件
+[0-9]*/
+*_export.json
+*_activities.json
+*_view.html
+
+# 日志与调试输出
+*.log
+*.log.*
+debug_*.txt
+
+# 构建产物（发布包中已附带 gui 版 exe，源码编译产物可忽略）
+# qzone-history-gui.exe  # 发布目录保留预编译 exe
+
+# IDE / 系统
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
