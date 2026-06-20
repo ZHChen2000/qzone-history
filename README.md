@@ -24,6 +24,10 @@
 
 ![运行日志与进度](docs/images/gui-logs.png)
 
+恢复完成后，在本地 HTML 浏览页按时间线查看说说、留言与活动记录：
+
+![恢复结果浏览页](docs/images/viewer-result.png)
+
 ---
 
 ## 功能特性
