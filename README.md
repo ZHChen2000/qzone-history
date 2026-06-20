@@ -1,5 +1,7 @@
 # QQ 空间历史恢复工具 (qzone-history)
 
+> **🌐 语言 / Language / Langue：** [**简体中文**](README.md) · [English](README.en.md) · [Français](README.fr.md)
+
 [![Version](https://img.shields.io/badge/version-v0.0.1-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
