@@ -7,6 +7,7 @@
 [![Language](https://img.shields.io/badge/语言-Go_82%25-00ADD8)](#)
 [![UI](https://img.shields.io/badge/UI-Web_控制台-4f8cff?style=flat)](#功能特性)
 [![Storage](https://img.shields.io/badge/数据-纯本地存储-success?style=flat)](#技术说明)
+[![GitHub](https://img.shields.io/badge/GitHub-ZHChen2000/qzone--history-181717?style=flat&logo=github)](https://github.com/ZHChen2000/qzone-history)
 
 **作者：[ZHChen](https://github.com/ZHChen2000)** · **联系：QQ 1415094395**
 
