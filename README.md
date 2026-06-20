@@ -2,7 +2,7 @@
 
 # QQ 空间历史恢复工具
 
-**qzone-history** — 找回那些已消失的说说与留言
+**Qzone-History** — 找回那些已被删除的说说与留言
 
 <br>
 
@@ -33,15 +33,21 @@
 
 双击 `qzone-history-gui.exe` 后，浏览器自动打开 Web 控制台，扫码登录即可开始恢复：
 
-![控制台总览](docs/images/gui-overview.png)
+<p align="center">
+  <img src="docs/images/gui-overview.png" alt="控制台总览" width="720">
+</p>
 
 实时日志与抓取进度：
 
-![运行日志与进度](docs/images/gui-logs.png)
+<p align="center">
+  <img src="docs/images/gui-logs.png" alt="运行日志与进度" width="720">
+</p>
 
 恢复完成后，在本地 HTML 浏览页按时间线查看说说、留言与活动记录：
 
-![恢复结果浏览页](docs/images/viewer-result.png)
+<p align="center">
+  <img src="docs/images/viewer-result.png" alt="恢复结果浏览页" width="720">
+</p>
 
 ---
 
