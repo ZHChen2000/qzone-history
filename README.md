@@ -4,9 +4,6 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](#从源码编译)
-[![Language](https://img.shields.io/badge/语言-Go_82%25-00ADD8)](#)
-[![UI](https://img.shields.io/badge/UI-Web_控制台-4f8cff?style=flat)](#功能特性)
-[![Storage](https://img.shields.io/badge/数据-纯本地存储-success?style=flat)](#技术说明)
 [![GitHub](https://img.shields.io/badge/GitHub-ZHChen2000/qzone--history-181717?style=flat&logo=github)](https://github.com/ZHChen2000/qzone-history)
 
 **作者：[ZHChen](https://github.com/ZHChen2000)** · **联系：QQ 1415094395**
@@ -14,6 +11,18 @@
 从 QQ 空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，并导出为本地 JSON 与 HTML 浏览页。
 
 > 仅供个人备份**本人** QQ 空间数据，请遵守腾讯相关服务条款。
+
+---
+
+## 界面预览
+
+双击 `qzone-history-gui.exe` 后，浏览器自动打开 Web 控制台，扫码登录即可开始恢复：
+
+![控制台总览](docs/images/gui-overview.png)
+
+实时日志与抓取进度：
+
+![运行日志与进度](docs/images/gui-logs.png)
 
 ---
 
@@ -37,6 +46,7 @@
 ```
 qzone-history/
 ├── qzone-history-gui.exe   # Windows 预编译（无控制台）
+├── docs/images/            # 文档配图
 ├── cmd/                    # 入口与调试工具
 ├── internal/               # 业务逻辑、GUI、API 客户端
 ├── pkg/                    # 导出、路径、日志等公共包
@@ -69,15 +79,6 @@ go build -o qzone-history.exe ./cmd/main.go
 ## 开源协议
 
 本项目采用 [Apache License 2.0](LICENSE)。
-
-## 上传 GitHub / 本地运行后请注意
-
-`qzone-history-gui.exe` 会在**其所在目录**自动生成运行时文件：
-
-- `session.db`（登录 Cookie，**含敏感信息**）
-- `{QQ号}/` 文件夹（恢复出的全部数据）
-
-**切勿**将这些文件提交到 Git。`.gitignore` 已忽略上述路径。
 
 ## 免责声明
 
