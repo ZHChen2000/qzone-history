@@ -30,7 +30,6 @@ func main() {
 
 	fmt.Printf("=== 2018年前数据全力探测 QQ %s ===\n\n", uin)
 
-	// 1. 超大 offset 扫描
 	fmt.Println("--- feeds2 超大 offset ---")
 	bestMin := int64(0)
 	for _, off := range []int{3000, 3200, 3400, 3600, 3800, 4000, 4500, 5000, 6000, 7000, 8000, 10000, 12000, 15000} {
@@ -52,7 +51,6 @@ func main() {
 		time.Sleep(150 * time.Millisecond)
 	}
 
-	// 2. 在 2500-4500 细扫
 	fmt.Println("\n--- feeds2 细粒度 offset 2500-4500 ---")
 	for off := 2500; off <= 4500; off += 50 {
 		body, err := qzone_api.ProbeFeedOffset(cookies, uin, off, 100)
@@ -75,7 +73,6 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	// 3. feeds3 basetime 历史游标
 	fmt.Println("\n--- feeds3 basetime 历史 ---")
 	timestamps := []int64{
 		0,
@@ -103,7 +100,6 @@ func main() {
 		time.Sleep(150 * time.Millisecond)
 	}
 
-	// 4. 说说 API 变体
 	fmt.Println("\n--- emotion_cgi_msglist 变体 ---")
 	for _, tc := range []struct {
 		sort, ftype, pos, num int

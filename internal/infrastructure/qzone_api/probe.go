@@ -10,20 +10,17 @@ import (
 	"time"
 )
 
-// ProbeFeedRange 按时间段探测活动 feed（供调试与分段拉取）
 func ProbeFeedRange(cookies map[string]string, uin string, beginTime, endTime int64, offset, count int) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
 	return c.fetchFeedBodyWithRange(context.Background(), cookies, uin, beginTime, endTime, offset, count)
 }
 
-// ParseActivitiesFromHTML 解析活动 feed HTML
 func ParseActivitiesFromHTML(processedHTML, uin string) ([]*entity.Activity, error) {
 	c := &qzoneAPIClient{}
 	return c.parseActivitiesFromHTML(processedHTML, uin)
 }
 
-// FetchActivitiesInRange 拉取指定时间范围内的全部活动
 func FetchActivitiesInRange(cookies map[string]string, uin string, beginTime, endTime int64) ([]*entity.Activity, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
@@ -61,7 +58,6 @@ func defaultHTTPClient() *http.Client {
 	return &http.Client{Timeout: time.Second * 60}
 }
 
-// ProbeFeeds3 探测 feeds3_html_more 接口（好友/自己动态时间游标）
 func ProbeFeeds3(cookies map[string]string, uin string, begintime int64) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
@@ -81,7 +77,6 @@ func ProbeFeeds3(cookies map[string]string, uin string, begintime int64) ([]byte
 	return c.doGet(context.Background(), cookies, legacy, uin, true)
 }
 
-// ProbeFeedSet 探测不同 set 参数
 func ProbeFeedSet(cookies map[string]string, uin string, set, offset, count int) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)

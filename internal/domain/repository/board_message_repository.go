@@ -5,7 +5,6 @@ import (
 	"qzone-history/internal/domain/entity"
 )
 
-// BoardMessageRepository 定义了留言板消息存储的接口
 type BoardMessageRepository interface {
 	BatchImport(ctx context.Context, messages []entity.BoardMessage) error
 	Insert(ctx context.Context, message entity.BoardMessage) error

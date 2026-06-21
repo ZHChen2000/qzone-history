@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// extractStringBetween 提取两个字符串之间的内容
 func extractStringBetween(sourceString, startString, endString string) string {
 	startIndex := strings.Index(sourceString, startString) + len(startString)
 	endIndex := strings.Index(sourceString, endString)
@@ -17,7 +16,6 @@ func extractStringBetween(sourceString, startString, endString string) string {
 	return sourceString[startIndex:endIndex]
 }
 
-// replaceMultipleSpaces 去除多余的空格
 func replaceMultipleSpaces(s string) string {
 	re := regexp.MustCompile(`\s+`)
 	return re.ReplaceAllString(s, " ")
@@ -38,7 +36,6 @@ func unescapeFeedText(message string) string {
 	return message
 }
 
-// ExtractH5FeedsHTML 从 h5 活动接口响应中提取所有 HTML 片段
 func ExtractH5FeedsHTML(message string) string {
 	message = unescapeFeedText(message)
 	var parts []string
@@ -66,7 +63,6 @@ func ExtractH5FeedsHTML(message string) string {
 	return strings.Join(parts, "")
 }
 
-// ExtractFeedTotalNumber 从 h5 响应中解析活动总数
 func ExtractFeedTotalNumber(message string) int {
 	re := regexp.MustCompile(`total_number:(\d+)`)
 	matches := re.FindStringSubmatch(message)
@@ -79,17 +75,14 @@ func ExtractFeedTotalNumber(message string) int {
 	return -1
 }
 
-// HasMoreFeeds 判断 h5 活动接口是否还有更多数据
 func HasMoreFeeds(message string) bool {
 	return strings.Contains(message, "hasMoreFeeds:true")
 }
 
-// AbstimeRegex 匹配 feed 中的 abstime 字段
 func AbstimeRegex() *regexp.Regexp {
 	return regexp.MustCompile(`abstime:'(\d+)'`)
 }
 
-// ExtractMinAbstime 从 feed 响应提取最早 abstime 时间戳
 func ExtractMinAbstime(message string) int64 {
 	re := AbstimeRegex()
 	matches := re.FindAllStringSubmatch(message, -1)
@@ -107,7 +100,6 @@ func ExtractMinAbstime(message string) int64 {
 	return minTs
 }
 
-// ProcessFeedResponse 处理活动接口响应（兼容旧版与 h5 格式）
 func ProcessFeedResponse(message string) string {
 	if strings.Contains(message, "waf.tencent.com") {
 		return ""
@@ -121,7 +113,6 @@ func ProcessFeedResponse(message string) string {
 	return ProcessOldHTML(message)
 }
 
-// ProcessOldHTML 替换十六进制编码并处理HTML
 func ProcessOldHTML(message string) string {
 	newText := unescapeFeedText(message)
 

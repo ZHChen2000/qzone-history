@@ -5,7 +5,6 @@ import (
 	"qzone-history/internal/domain/entity"
 )
 
-// ActivityRepository 定义了活动记录存储的接口
 type ActivityRepository interface {
 	BatchImport(ctx context.Context, activities []entity.Activity) error
 	Insert(ctx context.Context, activity entity.Activity) error

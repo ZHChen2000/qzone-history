@@ -5,7 +5,6 @@ import (
 	"strconv"
 )
 
-// GeneratePtqrToken 根据提供的 qrsig 生成 ptqr_token
 // GeneratePtqrToken generates a ptqr_token based on the provided qrsig.
 func GeneratePtqrToken(qrsig string) string {
 	e := 0
@@ -15,7 +14,6 @@ func GeneratePtqrToken(qrsig string) string {
 	return strconv.Itoa(2147483647 & e)
 }
 
-// ExtractUin 从cookies中提取QQ号
 func ExtractUin(cookies map[string]string) string {
 	uin, exists := cookies["uin"]
 	if !exists {
@@ -25,7 +23,6 @@ func ExtractUin(cookies map[string]string) string {
 	return re.ReplaceAllString(uin, "")
 }
 
-// GenerateGTK 根据提供的 skey 生成 GTK (g_tk)
 // GenerateGTK generates a GTK (g_tk) based on the provided skey.
 func GenerateGTK(skey string) string {
 	h := 5381

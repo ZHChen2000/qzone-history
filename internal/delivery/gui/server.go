@@ -31,7 +31,6 @@ var dashboardHTML []byte
 
 const DefaultPort = 17890
 
-// Server Web 控制台
 type Server struct {
 	cfg    *config.Config
 	hub    *loghub.Hub
@@ -68,7 +67,6 @@ func (s *Server) restoreSession() {
 	s.mu.Unlock()
 }
 
-// ListenAndServe 启动 HTTP 服务并尝试打开浏览器
 func (s *Server) ListenAndServe() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleIndex)
@@ -359,7 +357,6 @@ func (s *Server) runJob(ctx context.Context, user *entity.User, opts app.RunOpti
 	}
 	defer stack.DB.Close()
 
-	// 将登录 cookie 同步到用户专属数据库
 	if _, err := stack.App.Auth().RefreshLogin(ctx, user); err != nil {
 		s.hub.Logf("同步登录状态: %v（继续尝试）", err)
 	}

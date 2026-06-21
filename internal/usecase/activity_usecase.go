@@ -48,7 +48,6 @@ func (a *activityUseCase) GetActivitiesByType(ctx context.Context, activityType 
 	return a.activityRepo.FindByType(ctx, activityType, limit, offset)
 }
 func (a *activityUseCase) generateActivityID(message *entity.Activity) string {
-	// 使用消息内容和时间戳生成唯一ID
 	data := fmt.Sprintf("%s%s%s", message.Content, message.Timestamp.String(), message.SenderQQ)
 	hash := md5.Sum([]byte(data))
 	return hex.EncodeToString(hash[:])
@@ -76,7 +75,6 @@ func (a *activityUseCase) FetchActivities(ctx context.Context, user entity.User,
 		return activities, nil
 	}
 
-	// 分批保存到数据库
 	batchSize := 100
 	for i := 0; i < len(activities); i += batchSize {
 		if err := ctx.Err(); err != nil {
@@ -111,7 +109,6 @@ func (a *activityUseCase) FetchActivity(ctx context.Context, user entity.User, o
 		return entity.Activity{}, fmt.Errorf("未找到活动")
 	}
 	activity := activities[0]
-	// 保存到数据库
 	err = a.activityRepo.Insert(ctx, activity)
 	if err != nil {
 		return entity.Activity{}, fmt.Errorf("保存活动失败: %w", err)

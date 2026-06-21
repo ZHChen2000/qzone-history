@@ -37,14 +37,12 @@ func NewExportUseCase(
 }
 
 func (u *exportUseCase) ExportUserDataToJSON(ctx context.Context, userQQ string) error {
-	// 获取用户数据
 	moments, _ := u.momentRepo.FindByUserQQ(ctx, userQQ, -1, 0)
 	boardMessages, _ := u.boardMessageRepo.FindByUserQQ(ctx, userQQ, -1, 0)
 	friends, _ := u.friendRepo.FindFriendsByUserQQ(ctx, userQQ)
 	export.SortMomentsDesc(moments)
 	export.SortBoardDesc(boardMessages)
 
-	// 创建导出数据结构
 	exportData := struct {
 		UserQQ        string                `json:"userQQ"`
 		Moments       []entity.Moment       `json:"moments"`
@@ -57,13 +55,11 @@ func (u *exportUseCase) ExportUserDataToJSON(ctx context.Context, userQQ string)
 		Friends:       friends,
 	}
 
-	// 转换为JSON
 	jsonData, err := json.MarshalIndent(exportData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal data to JSON: %w", err)
 	}
 
-	// 写入文件
 	filename := paths.ExportJSONPath(userQQ)
 	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
@@ -74,7 +70,6 @@ func (u *exportUseCase) ExportUserDataToJSON(ctx context.Context, userQQ string)
 }
 
 func (u *exportUseCase) ExportUserDataToExcel(ctx context.Context, userQQ string) error {
-	// TODO 实现Excel导出逻辑
 	return fmt.Errorf("ExportUserDataToExcel not implemented")
 }
 

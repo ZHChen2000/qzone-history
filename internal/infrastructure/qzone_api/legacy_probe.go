@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// ProbeLegacyFeeds3 探测 feeds3_html_more（basetime 游标）
 func ProbeLegacyFeeds3(cookies map[string]string, uin string, begintime int64, count int) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
@@ -27,7 +26,6 @@ func ProbeLegacyFeeds3(cookies map[string]string, uin string, begintime int64, c
 	return c.doGet(context.Background(), cookies, legacy, uin, true)
 }
 
-// ProbeEmotionMsgList 探测说说列表 API 变体
 func ProbeEmotionMsgList(cookies map[string]string, uin string, sort, ftype, pos, num int) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
@@ -39,14 +37,12 @@ func ProbeEmotionMsgList(cookies map[string]string, uin string, sort, ftype, pos
 	return c.doGet(context.Background(), cookies, url, uin, true)
 }
 
-// ProbeFeedOffset 单点 offset 探测
 func ProbeFeedOffset(cookies map[string]string, uin string, offset, count int) ([]byte, error) {
 	c := &qzoneAPIClient{httpClient: defaultHTTPClient()}
 	cookies = c.warmUpSession(cookies)
 	return c.fetchFeedBodyWithRange(context.Background(), cookies, uin, 0, 0, offset, count)
 }
 
-// ExtractMinAbstime 从 feed 响应提取最早 abstime
 func ExtractMinAbstime(raw string) (int64, int) {
 	ts := utils.ExtractMinAbstime(raw)
 	re := utils.AbstimeRegex()

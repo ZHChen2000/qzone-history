@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// ParseCN 解析 QQ 空间常见中文时间；仅月日时 defaultYear 补全年份。
 func ParseCN(timeStr string, defaultYear int) time.Time {
 	timeStr = strings.TrimSpace(timeStr)
 	if timeStr == "" {
@@ -52,7 +51,6 @@ func ParseCN(timeStr string, defaultYear int) time.Time {
 	return time.Time{}
 }
 
-// RefYearFromEarliest 根据已知的最早时间戳与目标年份推断缺省年份。
 func RefYearFromEarliest(earliestUnix int64, targetYear int) int {
 	if earliestUnix > 0 {
 		return time.Unix(earliestUnix, 0).Year()

@@ -11,13 +11,11 @@ import (
 	"qzone-history/pkg/database/sqlite"
 )
 
-// Stack 应用依赖栈
 type Stack struct {
 	App *app.App
 	DB  database.Database
 }
 
-// Build 根据数据库路径构建完整应用栈
 func Build(cfg *config.Config, dbPath string) (*Stack, error) {
 	db := sqlite.NewSQLiteDB()
 	if err := db.Connect(&database.Config{DBName: dbPath}); err != nil {

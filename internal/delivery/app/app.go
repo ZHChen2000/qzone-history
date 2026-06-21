@@ -42,12 +42,10 @@ func NewApp(
 	}
 }
 
-// Auth 返回认证用例（供 GUI 调用）
 func (a *App) Auth() usecase.AuthUseCase {
 	return a.authUseCase
 }
 
-// RunPipeline 在已登录前提下执行完整恢复流程（GUI 后台调用）
 func (a *App) RunPipeline(ctx context.Context, user *entity.User, opts RunOptions) error {
 	hub := loghub.Default()
 	hub.SetStatus(func(s *loghub.Status) {
@@ -201,7 +199,6 @@ func logError(message string, err error) error {
 	return err
 }
 
-// WaitQRLogin 轮询二维码登录（由 GUI 展示二维码，此处仅轮询）
 func WaitQRLogin(ctx context.Context, auth usecase.AuthUseCase, qrsig string) (*entity.User, error) {
 	hub := loghub.Default()
 	for {

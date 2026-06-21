@@ -5,7 +5,6 @@ import (
 	"qzone-history/internal/domain/entity"
 )
 
-// FriendRepository 定义了好友关系存储的接口
 type FriendRepository interface {
 	BatchImport(ctx context.Context, friends []entity.Friend) error
 	Insert(ctx context.Context, friend entity.Friend) error

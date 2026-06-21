@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Status 运行状态
 type Status struct {
 	Phase          string `json:"phase"`
 	Running        bool   `json:"running"`
@@ -26,7 +25,6 @@ type entry struct {
 	Message string `json:"message"`
 }
 
-// Hub 线程安全日志与进度中心
 type Hub struct {
 	mu       sync.RWMutex
 	logs     []entry

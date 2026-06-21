@@ -6,14 +6,12 @@ import (
 	"time"
 )
 
-// FetchOptions 活动抓取参数
 type FetchOptions struct {
-	MaxOffset  int // 最大 offset 扫描上限
-	TargetYear int // 期望最早年份（用于进度提示，不提前停止）
+	MaxOffset  int
+	TargetYear int
 	Ctx        context.Context
 }
 
-// DefaultFetchOptions 默认抓取配置
 func DefaultFetchOptions() FetchOptions {
 	return FetchOptions{MaxOffset: 25000, TargetYear: 2017, Ctx: context.Background()}
 }
@@ -25,7 +23,6 @@ func fetchCtx(opts FetchOptions) context.Context {
 	return context.Background()
 }
 
-// ProgressReporter 抓取进度回调
 type ProgressReporter interface {
 	OnActivities(total int, earliestUnix int64, phase string)
 }
@@ -94,7 +91,6 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// scanProgressLog 活动深扫进度日志（避免长时间无输出）
 type scanProgressLog struct {
 	lastAt time.Time
 	minGap time.Duration

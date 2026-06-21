@@ -18,7 +18,6 @@ func (w *hubWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// Redirect 将标准 log 输出重定向到 loghub
 func Redirect(h *loghub.Hub) {
 	log.SetOutput(&hubWriter{h: h})
 	log.SetFlags(0)

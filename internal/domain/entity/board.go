@@ -7,21 +7,18 @@ import (
 	"time"
 )
 
-// BoardMessage 表示留言板消息
 type BoardMessage struct {
-	ID        string    `json:"id" gorm:"primaryKey"`  // 留言ID
-	UserQQ    string    `json:"userQQ" gorm:"index"`   // 留言板所有者QQ
-	SenderQQ  string    `json:"senderQQ" gorm:"index"` // 发送者QQ
-	SenderName string   `json:"senderName"`            // 发送者昵称（活动重建时有值）
-	Content   string    `json:"content"`               // 留言内容
-	Timestamp time.Time `json:"timestamp"`             // 时间戳
-	TimeText  string    `json:"timeText"`              // 时间文本
+	ID        string    `json:"id" gorm:"primaryKey"`
+	UserQQ    string    `json:"userQQ" gorm:"index"`
+	SenderQQ  string    `json:"senderQQ" gorm:"index"`
+	SenderName string   `json:"senderName"`
+	Content   string    `json:"content"`
+	Timestamp time.Time `json:"timestamp"`
+	TimeText  string    `json:"timeText"`
 }
 
-// BeforeCreate 钩子，在创建记录之前自动生成ID
 func (message *BoardMessage) BeforeCreate(tx *gorm.DB) (err error) {
 	if message.ID == "" {
-		// 使用内容和收到的人的QQ生成唯一键
 		key := message.Content + message.UserQQ + message.SenderQQ
 		hash := md5.Sum([]byte(key))
 		message.ID = hex.EncodeToString(hash[:])

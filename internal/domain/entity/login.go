@@ -1,6 +1,5 @@
 package entity
 
-// LoginStatus 表示登录状态
 type LoginStatus int
 
 const (

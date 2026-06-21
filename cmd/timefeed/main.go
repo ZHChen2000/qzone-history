@@ -121,7 +121,6 @@ func ts(y int, m int, d int, hms ...int) int64 {
 }
 
 func probeRange(client qzone_api.QzoneAPIClient, cookies map[string]string, uin string, r timeRange) (total, count int, hasMore bool, samples []string) {
-	// 使用内部探测接口（见 qzone_api probe）
 	body, err := qzone_api.ProbeFeedRange(cookies, uin, r.beginTime, r.endTime, 0, 100)
 	if err != nil {
 		samples = []string{fmt.Sprintf("ERR: %v", err)}
@@ -153,7 +152,6 @@ func probeRange(client qzone_api.QzoneAPIClient, cookies map[string]string, uin 
 		samples = append(samples, fmt.Sprintf("%s: %s", a.SenderName, tt))
 	}
 
-	// 若首屏有数据且 hasMore，再拉一页看累计
 	if hasMore && count > 0 {
 		body2, err := qzone_api.ProbeFeedRange(cookies, uin, r.beginTime, r.endTime, count, 100)
 		if err == nil {
@@ -164,7 +162,6 @@ func probeRange(client qzone_api.QzoneAPIClient, cookies map[string]string, uin 
 		}
 	}
 
-	// 从原始响应提取 abstime 样本
 	abstimeRe := regexp.MustCompile(`abstime:'(\d+)'`)
 	matches := abstimeRe.FindAllStringSubmatch(raw, 3)
 	for _, m := range matches {

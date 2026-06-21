@@ -18,28 +18,20 @@ import (
 )
 
 type QzoneAPIClient interface {
-	// GetLoginQRCode 获取登录二维码
 	GetLoginQRCode() ([]byte, string, error)
 
-	// CheckLoginStatus 检查登录二维码状态
 	CheckLoginStatus(qrsig string) (entity.LoginStatus, string, error)
 
-	// CompleteLogin 完成登录并返回 cookies
 	CompleteLogin(responseText string) (map[string]string, error)
 
-	// GetUserInfo 获取用户信息
 	GetUserInfo(cookies map[string]string) (*entity.User, error)
 
-	// GetActivities 获取用户活动
 	GetActivities(cookies map[string]string, offset, count int) ([]*entity.Activity, error)
 
-	// GetAllActivities 获取全部用户活动
 	GetAllActivities(cookies map[string]string, opts FetchOptions) ([]*entity.Activity, error)
 
-	// GetVisibleMoments 获取当前未删除的说说列表
 	GetVisibleMoments(cookies map[string]string) ([]entity.Moment, error)
 
-	// GetBoardMessages 获取留言板消息
 	GetBoardMessages(cookies map[string]string) ([]entity.BoardMessage, error)
 }
 
@@ -360,7 +352,6 @@ func (c *qzoneAPIClient) getActivityCount(cookies map[string]string) (int, error
 		return total, nil
 	}
 
-	// 回退到二分查找（兼容旧接口）
 	lowerBound := 0
 	upperBound := 10000000
 	mid := upperBound / 2
@@ -998,7 +989,6 @@ func (c *qzoneAPIClient) GetVisibleMoments(cookies map[string]string) ([]entity.
 	uin := utils.ExtractUin(cookies)
 	gTk := utils.GenerateGTK(cookies["p_skey"])
 
-	// 先取 total，再一次性拉全（部分账号可拿到比逐页更多的历史未删说说）
 	total, err := c.fetchVisibleMomentsPage(cookies, uin, gTk, 0, 1)
 	if err != nil {
 		return nil, err

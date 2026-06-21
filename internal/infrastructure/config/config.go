@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	Database struct {
-		Type     string // 数据库类型，例如 "sqlite", "postgres", "mysql"
+		Type     string
 		Host     string
 		Port     int
 		User     string
@@ -23,7 +23,6 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	// 设置默认配置
 	defaultConfig := &Config{
 		Database: struct {
 			Type     string
@@ -53,7 +52,6 @@ func LoadConfig() (*Config, error) {
 		},
 	}
 
-	// 尝试读取外部配置文件
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./config")
@@ -61,14 +59,11 @@ func LoadConfig() (*Config, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if errors.As(err, &configFileNotFoundError) {
-			// 配置文件未找到，使用默认配置
 			return defaultConfig, nil
 		}
-		// 其他错误
 		return nil, err
 	}
 
-	// 将读取的配置与默认配置合并
 	if err := viper.Unmarshal(defaultConfig); err != nil {
 		return nil, err
 	}

@@ -36,7 +36,6 @@ func buildFeeds3Checkpoints(targetYear int) []int64 {
 		add(t.Unix())
 	}
 	add(start.Unix())
-	// 关键年份锚点（补充季度扫描可能漏掉的边界）
 	for y := targetYear; y <= now.Year(); y++ {
 		add(time.Date(y, 1, 1, 0, 0, 0, 0, time.Local).Unix())
 		add(time.Date(y, 7, 1, 0, 0, 0, 0, time.Local).Unix())

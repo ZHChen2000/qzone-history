@@ -1,6 +1,32 @@
 package offset
 
-// EstimateScan 根据目标年份与 max offset 估算全流程耗时（分钟）。
+func activityScanMinutes(targetYear int) (lo, hi int) {
+	switch {
+	case targetYear >= 2024:
+		return 8, 15
+	case targetYear == 2023:
+		return 10, 18
+	case targetYear == 2022:
+		return 12, 22
+	case targetYear == 2021:
+		return 15, 25
+	case targetYear == 2020:
+		return 25, 40
+	case targetYear == 2019:
+		return 35, 55
+	case targetYear == 2018:
+		return 50, 75
+	case targetYear == 2017:
+		return 60, 90
+	case targetYear == 2016:
+		return 80, 110
+	case targetYear == 2015:
+		return 90, 120
+	default:
+		return 120, 180
+	}
+}
+
 func EstimateScan(targetYear, maxOffset int) (minMinutes, maxMinutes int) {
 	if targetYear < 2005 {
 		targetYear = 2005
@@ -9,41 +35,44 @@ func EstimateScan(targetYear, maxOffset int) (minMinutes, maxMinutes int) {
 		maxOffset = 500
 	}
 
-	// 活动深扫请求量粗算（offset 深扫 + 时间窗 + feeds3）
-	offsetSteps := maxOffset / 100
-	if offsetSteps > 800 {
-		offsetSteps = 800
-	}
-	ultraSteps := 0
-	if maxOffset >= 5500 {
-		ultraSteps = (minInt(15000, maxOffset) - 5500) / 20
-	}
-	yearSpan := 2026 - targetYear
-	if yearSpan < 1 {
-		yearSpan = 1
+	lo, hi := activityScanMinutes(targetYear)
+	lo += 8
+	hi += 15
+
+	rec := RecommendMaxOffset(targetYear)
+	if rec > 0 && maxOffset > rec {
+		ratio := float64(maxOffset) / float64(rec)
+		if ratio > 2.5 {
+			ratio = 2.5
+		}
+		if ratio < 1 {
+			ratio = 1
+		}
+		lo = int(float64(lo)*ratio + 0.5)
+		hi = int(float64(hi)*ratio + 0.5)
 	}
 
-	requests := 500 + offsetSteps*12 + ultraSteps*4 + yearSpan*40 + yearSpan*24
-	// 每条请求约 0.25~0.45 分钟（含网络与限速），外加留言/重建/导出
-	scanMin := requests * 15 / 100
-	scanMax := requests * 27 / 100
-	overhead := 15 + yearSpan*2
-
-	minMinutes = scanMin + overhead
-	maxMinutes = scanMax + overhead + 30
-	if minMinutes < 20 {
-		minMinutes = 20
+	if lo > hi {
+		lo, hi = hi, lo
 	}
-	if maxMinutes < minMinutes+30 {
-		maxMinutes = minMinutes + 30
+	if lo < 15 {
+		lo = 15
 	}
-	if maxMinutes > 480 {
-		maxMinutes = 480
+	if hi < lo+10 {
+		hi = lo + 10
 	}
-	return minMinutes, maxMinutes
+	if hi > 300 {
+		hi = 300
+	}
+	if lo > hi-10 {
+		lo = hi - 10
+		if lo < 15 {
+			lo = 15
+		}
+	}
+	return lo, hi
 }
 
-// EstimateScanText 返回给用户看的预计耗时文案。
 func EstimateScanText(targetYear, maxOffset int) string {
 	lo, hi := EstimateScan(targetYear, maxOffset)
 	return "预计本次完整恢复约 " + itoa(lo) + "–" + itoa(hi) + " 分钟（目标 " + itoa(targetYear) +

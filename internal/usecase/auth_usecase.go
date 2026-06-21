@@ -24,7 +24,6 @@ func NewAuthUseCase(qzoneAPI qzone_api.QzoneAPIClient, userRepo repository.UserR
 }
 
 func (a *authUseCase) CheckLocalLoginStatus(ctx context.Context) (*entity.User, bool, error) {
-	// 从本地存储获取最后登录的用户
 	lastLoginUser, err := a.userRepo.GetLastLoginUser(ctx)
 	if err != nil {
 		return nil, false, fmt.Errorf("获取最后登录用户失败: %w", err)
@@ -34,18 +33,15 @@ func (a *authUseCase) CheckLocalLoginStatus(ctx context.Context) (*entity.User, 
 		return nil, false, nil
 	}
 
-	// 检查登录是否过期
 	if time.Now().After(lastLoginUser.LoginExpireTime) {
 		return nil, false, nil
 	}
 
-	// 尝试使用存储的 cookies 获取用户信息，以验证登录状态
 	userInfo, err := a.qzoneAPI.GetUserInfo(lastLoginUser.Cookies)
 	if err != nil {
 		return nil, false, nil
 	}
 
-	// 更新用户信息
 	lastLoginUser.Nickname = userInfo.Nickname
 	lastLoginUser.AvatarURL = userInfo.AvatarURL
 	err = a.userRepo.Update(ctx, *lastLoginUser)
@@ -81,7 +77,7 @@ func (a *authUseCase) CompleteLogin(ctx context.Context, loginResponse string) (
 		Nickname:        userInfo.Nickname,
 		AvatarURL:       userInfo.AvatarURL,
 		Cookies:         cookies,
-		LoginExpireTime: time.Now().Add(24 * time.Hour), // 设置登录过期时间，这里假设为24小时
+		LoginExpireTime: time.Now().Add(24 * time.Hour),
 		LoginStatus:     entity.LoginStatusSuccess,
 	}
 
@@ -94,14 +90,11 @@ func (a *authUseCase) CompleteLogin(ctx context.Context, loginResponse string) (
 }
 
 func (a *authUseCase) RefreshLogin(ctx context.Context, user *entity.User) (*entity.User, error) {
-	// 尝试使用现有的 cookies 获取用户信息
 	userInfo, err := a.qzoneAPI.GetUserInfo(user.Cookies)
 	if err != nil {
-		// 如果失败，可能需要重新登录
 		return nil, errors.New("登录已过期，需要重新登录")
 	}
 
-	// 更新用户信息
 	user.Nickname = userInfo.Nickname
 	user.AvatarURL = userInfo.AvatarURL
 	user.LoginExpireTime = time.Now().Add(24 * time.Hour)
@@ -115,21 +108,18 @@ func (a *authUseCase) RefreshLogin(ctx context.Context, user *entity.User) (*ent
 }
 
 func (a *authUseCase) Logout(ctx context.Context) error {
-	// 获取当前登录用户
 	currentUser, err := a.userRepo.GetLastLoginUser(ctx)
 	if err != nil {
 		return fmt.Errorf("获取当前登录用户失败: %w", err)
 	}
 
 	if currentUser == nil {
-		return nil // 没有登录用户，直接返回
+		return nil
 	}
 
-	// 清除用户的登录信息
 	currentUser.Cookies = nil
 	currentUser.LoginExpireTime = time.Time{}
 
-	// 更新用户信息
 	err = a.userRepo.Update(ctx, *currentUser)
 	if err != nil {
 		return fmt.Errorf("更新用户信息失败: %w", err)

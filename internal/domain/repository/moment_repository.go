@@ -5,7 +5,6 @@ import (
 	"qzone-history/internal/domain/entity"
 )
 
-// MomentRepository 定义了说说存储的接口
 type MomentRepository interface {
 	BatchImport(ctx context.Context, moments []entity.Moment) error
 	Insert(ctx context.Context, moment entity.Moment) error

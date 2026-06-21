@@ -1,6 +1,5 @@
 package offset
 
-// RecommendMaxOffset 根据目标年份推荐 max offset（经验值，可手动调大）
 func RecommendMaxOffset(targetYear int) int {
 	switch {
 	case targetYear >= 2024:
@@ -42,7 +41,6 @@ func RecommendMaxOffset(targetYear int) int {
 	}
 }
 
-// RecommendHint 返回给用户的说明文字
 func RecommendHint(targetYear int) string {
 	off := RecommendMaxOffset(targetYear)
 	return fmtHint(targetYear, off)
