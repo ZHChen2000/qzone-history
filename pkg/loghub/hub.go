@@ -31,6 +31,8 @@ type Hub struct {
 	status   Status
 	subs     []chan entry
 	maxLogs  int
+	progStart        time.Time
+	progEstimateMins int
 }
 
 var defaultHub = NewHub(2000)
@@ -46,6 +48,36 @@ func (h *Hub) Reset() {
 	defer h.mu.Unlock()
 	h.logs = nil
 	h.status = Status{Phase: "等待开始"}
+	h.progStart = time.Time{}
+	h.progEstimateMins = 0
+}
+
+func (h *Hub) BeginTimedProgress(estimateMaxMinutes int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if estimateMaxMinutes < 15 {
+		estimateMaxMinutes = 15
+	}
+	h.progStart = time.Now()
+	h.progEstimateMins = estimateMaxMinutes
+	h.status.ProgressPercent = 0
+}
+
+func (h *Hub) TouchProgress() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.progStart.IsZero() || h.progEstimateMins <= 0 {
+		return
+	}
+	elapsed := time.Since(h.progStart).Minutes()
+	pct := int(elapsed / float64(h.progEstimateMins) * 98)
+	if pct > 98 {
+		pct = 98
+	}
+	if pct < h.status.ProgressPercent {
+		pct = h.status.ProgressPercent
+	}
+	h.status.ProgressPercent = pct
 }
 
 func (h *Hub) Logf(format string, args ...interface{}) {

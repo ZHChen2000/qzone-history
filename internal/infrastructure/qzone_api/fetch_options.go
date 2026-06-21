@@ -35,11 +35,9 @@ func (hubReporter) OnActivities(total int, earliestUnix int64, phase string) {
 	if earliestUnix > 0 {
 		earliest = time.Unix(earliestUnix, 0).Format("2006-01-02")
 	}
-	pct := 0
+	h.TouchProgress()
 	st := h.GetStatus()
-	if st.MaxOffset > 0 {
-		pct = min(99, total*100/(st.MaxOffset/5+100))
-	}
+	pct := st.ProgressPercent
 	h.SetStatus(func(s *loghub.Status) {
 		s.ActivityCount = total
 		s.EarliestDate = earliest

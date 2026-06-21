@@ -8,6 +8,7 @@ import (
 	"qzone-history/internal/domain/entity"
 	"qzone-history/internal/domain/usecase"
 	"qzone-history/pkg/loghub"
+	"qzone-history/pkg/offset"
 	"qzone-history/pkg/paths"
 	"time"
 )
@@ -58,6 +59,22 @@ func (a *App) RunPipeline(ctx context.Context, user *entity.User, opts RunOption
 		s.Phase = "准备中"
 		s.ProgressPercent = 0
 	})
+	_, estMax := offset.EstimateScan(opts.TargetYear, opts.MaxOffset)
+	hub.BeginTimedProgress(estMax)
+	progressCtx, stopProgress := context.WithCancel(ctx)
+	defer stopProgress()
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-progressCtx.Done():
+				return
+			case <-ticker.C:
+				hub.TouchProgress()
+			}
+		}
+	}()
 
 	if _, err := paths.EnsureUserDir(user.QQ); err != nil {
 		return logError("创建用户目录失败", err)

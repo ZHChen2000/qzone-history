@@ -6,7 +6,7 @@
 
 <br>
 
-[![Version](https://img.shields.io/badge/version-v0.0.3-brightgreen)](version/version.go)
+[![Version](https://img.shields.io/badge/version-v0.0.4-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](#从源码编译)
@@ -88,7 +88,7 @@ qzone-history/
 
 ```powershell
 # 无黑窗口（推荐分发，与仓库根目录预编译包相同）
-go build -ldflags="-H windowsgui -s -w -X qzone-history/version.Version=v0.0.3" -o qzone-history-gui.exe ./cmd/main.go
+go build -ldflags="-H windowsgui -s -w -X qzone-history/version.Version=v0.0.4" -o qzone-history-gui.exe ./cmd/main.go
 
 # 带控制台（便于调试）
 go build -o qzone-history.exe ./cmd/main.go
