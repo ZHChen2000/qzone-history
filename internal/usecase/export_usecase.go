@@ -41,6 +41,8 @@ func (u *exportUseCase) ExportUserDataToJSON(ctx context.Context, userQQ string)
 	moments, _ := u.momentRepo.FindByUserQQ(ctx, userQQ, -1, 0)
 	boardMessages, _ := u.boardMessageRepo.FindByUserQQ(ctx, userQQ, -1, 0)
 	friends, _ := u.friendRepo.FindFriendsByUserQQ(ctx, userQQ)
+	export.SortMomentsDesc(moments)
+	export.SortBoardDesc(boardMessages)
 
 	// 创建导出数据结构
 	exportData := struct {
@@ -89,6 +91,10 @@ func (u *exportUseCase) ExportUserDataToHTML(ctx context.Context, userQQ string)
 	if err != nil {
 		return fmt.Errorf("读取活动记录失败: %w", err)
 	}
+	export.SortMomentsDesc(moments)
+	export.SortBoardDesc(boardMessages)
+	viewerActivities := export.FilterActivitiesForViewer(activities)
+	export.SortActivitiesDesc(viewerActivities)
 
 	filename := paths.ViewerHTMLPath(userQQ)
 	return export.WriteViewerHTML(filename, export.ViewerPayload{
@@ -96,6 +102,6 @@ func (u *exportUseCase) ExportUserDataToHTML(ctx context.Context, userQQ string)
 		GeneratedAt:   time.Now().Format("2006-01-02 15:04:05"),
 		Moments:       moments,
 		BoardMessages: boardMessages,
-		Activities:    activities,
+		Activities:    viewerActivities,
 	})
 }

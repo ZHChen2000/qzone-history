@@ -117,6 +117,7 @@
         <label for="maxOffset" style="margin-top:12px">Max Offset（可手动调大）</label>
         <input type="number" id="maxOffset" value="25000" min="500" step="500">
         <p class="hint">offset 与年份<strong>非线性</strong>。若恢复后最早时间仍不够早，请逐步调大（如 +10000）后重试。</p>
+        <p class="hint" id="estimateHint" style="margin-top:10px;color:var(--warn)"></p>
         <div class="btn-row">
           <button class="btn btn-primary" id="btnStart" onclick="startRun()">开始恢复</button>
           <button class="btn btn-secondary" id="btnStop" onclick="stopRun()" disabled>停止</button>
@@ -195,19 +196,27 @@
 
     async function recommendOffset() {
       const y = document.getElementById('targetYear').value;
+      const maxOff = document.getElementById('maxOffset').value;
       try {
-        const j = await api('/api/recommend?year=' + y);
+        const j = await api('/api/recommend?year=' + y + '&maxOffset=' + maxOff);
         document.getElementById('maxOffset').value = j.maxOffset;
         document.getElementById('offsetHint').textContent = j.hint;
+        document.getElementById('estimateHint').textContent = j.estimate || '';
       } catch (e) {
         document.getElementById('offsetHint').textContent = e.message;
+        document.getElementById('estimateHint').textContent = '';
       }
     }
+
+    document.getElementById('maxOffset').addEventListener('change', recommendOffset);
 
     async function startRun() {
       const targetYear = parseInt(document.getElementById('targetYear').value, 10);
       const maxOffset = parseInt(document.getElementById('maxOffset').value, 10);
       try {
+        const est = await api('/api/recommend?year=' + targetYear + '&maxOffset=' + maxOffset);
+        const msg = (est.estimate || '本次扫描可能耗时较长') + '\n\n确定开始恢复吗？';
+        if (!confirm(msg)) return;
         await api('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

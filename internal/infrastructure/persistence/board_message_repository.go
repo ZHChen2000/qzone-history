@@ -31,7 +31,7 @@ func (r *boardMessageRepository) FindByUserQQ(ctx context.Context, userQQ string
 	} else if limit < 0 {
 		query = query.Offset(offset)
 	}
-	err := query.Find(&messages).Error
+	err := query.Order("timestamp DESC").Find(&messages).Error
 	return messages, err
 }
 

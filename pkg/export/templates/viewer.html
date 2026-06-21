@@ -213,7 +213,7 @@
 
     const ACTIVITY_TYPES = {
       0: '说说', 1: '转发', 2: '点赞', 3: '评论',
-      4: '留言', 5: '回复', 6: '访问', 7: '其他'
+      4: '留言', 5: '留言回复', 6: '回复', 7: '访问', 8: '其他'
     };
 
     let currentPanel = 'moments';
@@ -275,7 +275,7 @@
     function sortKey(item) {
       const t = parseTime(item);
       if (t instanceof Date) return t.getTime();
-      return 0;
+      return -1;
     }
 
     function renderImages(urls) {
@@ -371,7 +371,7 @@
       el.innerHTML = items.map(b => `
         <article class="card">
           <div class="card-header">
-            <span class="sender">QQ ${esc(b.senderQQ)}</span>
+            <span class="sender">${esc(b.senderName || ('QQ ' + (b.senderQQ || '未知')))}</span>
             <time class="time">${esc(timeLabel(b))}</time>
           </div>
           <div class="content">${formatContent(b.content)}</div>

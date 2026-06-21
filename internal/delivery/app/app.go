@@ -125,13 +125,15 @@ func (a *App) RunPipeline(ctx context.Context, user *entity.User, opts RunOption
 	}
 
 	if boardCount == 0 {
-		err = a.reconstructionUseCase.ReconstructBoardMessagesFromActivities(ctx, user.QQ)
-		if err != nil {
-			return logError("重建留言板失败", err)
-		}
+		hub.Log("留言板 API 无数据，将从活动记录补充留言")
 	} else {
-		hub.Log("已有留言板 API 数据，跳过活动重建留言")
+		hub.Logf("留言板 API 已导入 %d 条，继续从活动记录合并补充", boardCount)
 	}
+	err = a.reconstructionUseCase.ReconstructBoardMessagesFromActivities(ctx, user.QQ)
+	if err != nil {
+		return logError("合并留言板失败", err)
+	}
+	hub.Log("留言板已与活动记录合并完成")
 
 	hub.Log("导出用户数据到 JSON 格式...")
 	hub.SetStatus(func(s *loghub.Status) { s.Phase = "导出 JSON" })

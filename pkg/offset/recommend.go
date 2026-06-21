@@ -23,8 +23,20 @@ func RecommendMaxOffset(targetYear int) int {
 		return 35000
 	case targetYear == 2015:
 		return 50000
-	case targetYear <= 2014:
+	case targetYear == 2014:
 		return 80000
+	case targetYear == 2013:
+		return 90000
+	case targetYear == 2012:
+		return 100000
+	case targetYear == 2011:
+		return 110000
+	case targetYear == 2010:
+		return 120000
+	case targetYear == 2009:
+		return 130000
+	case targetYear <= 2008:
+		return 150000
 	default:
 		return 10000
 	}

@@ -170,9 +170,19 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRecommend(w http.ResponseWriter, r *http.Request) {
 	year := parseInt(r.URL.Query().Get("year"), 2017)
+	maxOff := offset.RecommendMaxOffset(year)
+	if q := r.URL.Query().Get("maxOffset"); q != "" {
+		if v := parseInt(q, 0); v >= 500 {
+			maxOff = v
+		}
+	}
+	lo, hi := offset.EstimateScan(year, maxOff)
 	writeJSON(w, map[string]interface{}{
-		"maxOffset": offset.RecommendMaxOffset(year),
-		"hint":      offset.RecommendHint(year),
+		"maxOffset":       maxOff,
+		"hint":            offset.RecommendHint(year),
+		"estimate":        offset.EstimateScanText(year, maxOff),
+		"estimateMinMins": lo,
+		"estimateMaxMins": hi,
 	})
 }
 
@@ -356,6 +366,7 @@ func (s *Server) runJob(ctx context.Context, user *entity.User, opts app.RunOpti
 
 	s.hub.Logf("开始恢复，目标年份 ≥ %d，max offset = %d", opts.TargetYear, opts.MaxOffset)
 	s.hub.Log(offset.RecommendHint(opts.TargetYear))
+	s.hub.Log(offset.EstimateScanText(opts.TargetYear, opts.MaxOffset))
 
 	if err := stack.App.RunPipeline(ctx, user, opts); err != nil {
 		if errors.Is(err, context.Canceled) || ctx.Err() != nil {

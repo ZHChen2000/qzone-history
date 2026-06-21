@@ -7,6 +7,7 @@ import (
 	"qzone-history/internal/domain/entity"
 	"qzone-history/internal/domain/repository"
 	"qzone-history/internal/domain/usecase"
+	"strings"
 )
 
 type reconstructionUseCase struct {
@@ -26,6 +27,7 @@ func NewReconstructionUseCase(
 		boardMessageRepo: boardMessageRepo,
 	}
 }
+
 func (u *reconstructionUseCase) ReconstructMomentsFromActivities(ctx context.Context, userQQ string) error {
 	activities, err := u.activityRepo.FindByUserQQ(ctx, userQQ, -1, 0)
 	if err != nil {
@@ -35,6 +37,15 @@ func (u *reconstructionUseCase) ReconstructMomentsFromActivities(ctx context.Con
 	momentMap := make(map[string]*entity.Moment)
 
 	for _, activity := range activities {
+		if activity.Type == entity.TypeBoardMessage || activity.Type == entity.TypeBoardReply {
+			continue
+		}
+		switch activity.Type {
+		case entity.TypeMoment, entity.TypeLike, entity.TypeView, entity.TypeComment, entity.TypeForward:
+		default:
+			continue
+		}
+
 		momentKey := generateMomentKey(activity)
 		moment, ok := momentMap[momentKey]
 		if !ok {
@@ -64,7 +75,6 @@ func (u *reconstructionUseCase) ReconstructMomentsFromActivities(ctx context.Con
 		}
 	}
 
-	// 将重建的Moment插入或更新到数据库
 	for _, moment := range momentMap {
 		if err := u.momentRepo.UpsertMoment(ctx, *moment); err != nil {
 			return err
@@ -75,19 +85,16 @@ func (u *reconstructionUseCase) ReconstructMomentsFromActivities(ctx context.Con
 }
 
 func generateMomentKey(activity entity.Activity) string {
-	// 使用内容和收到的人的QQ生成唯一键
 	key := activity.Content + activity.ReceiverQQ
 	hash := md5.Sum([]byte(key))
 	return hex.EncodeToString(hash[:])
 }
 
-// 更新Moment信息
 func updateMomentFromActivity(moment *entity.Moment, activity entity.Activity) {
-	// 更新逻辑，可以选择保留更详细的信息
 	if len(activity.Content) > len(moment.Content) {
 		moment.Content = activity.Content
 	}
-	if activity.Timestamp.Before(moment.Timestamp) {
+	if activity.Timestamp.Before(moment.Timestamp) || moment.Timestamp.IsZero() {
 		moment.Timestamp = activity.Timestamp
 		moment.TimeText = activity.TimeText
 	}
@@ -96,7 +103,6 @@ func updateMomentFromActivity(moment *entity.Moment, activity entity.Activity) {
 	}
 }
 
-// 从活动重建评论
 func reconstructCommentFromActivity(activity entity.Activity) entity.Comment {
 	return entity.Comment{
 		UserQQ:    activity.SenderQQ,
@@ -112,30 +118,65 @@ func (u *reconstructionUseCase) ReconstructBoardMessagesFromActivities(ctx conte
 		return err
 	}
 
-	for _, activity := range activities {
-		if activity.Type == entity.TypeBoardMessage {
-			boardMessage := reconstructBoardMessageFromActivity(activity)
-
-			// 生成 ID
-			_ = boardMessage.BeforeCreate(nil)
-
-			if err := u.boardMessageRepo.Insert(ctx, boardMessage); err != nil {
-				return err
-			}
-		}
+	existing, err := u.boardMessageRepo.FindByUserQQ(ctx, userQQ, -1, 0)
+	if err != nil {
+		return err
 	}
 
+	apiKeys := make(map[string]struct{}, len(existing))
+	for _, msg := range existing {
+		apiKeys[boardDedupKey(msg)] = struct{}{}
+	}
+
+	added := 0
+	for _, activity := range activities {
+		if !isBoardActivity(activity) {
+			continue
+		}
+		candidate := reconstructBoardMessageFromActivity(activity)
+		key := boardDedupKey(candidate)
+		if _, ok := apiKeys[key]; ok {
+			continue
+		}
+		_ = candidate.BeforeCreate(nil)
+		if err := u.boardMessageRepo.Insert(ctx, candidate); err != nil {
+			return err
+		}
+		apiKeys[key] = struct{}{}
+		added++
+	}
+
+	_ = added
 	return nil
 }
 
-// 辅助函数，根据活动记录重建BoardMessage
+func isBoardActivity(a entity.Activity) bool {
+	return a.Type == entity.TypeBoardMessage || a.Type == entity.TypeBoardReply
+}
+
 func reconstructBoardMessageFromActivity(activity entity.Activity) entity.BoardMessage {
-	// TODO 实现重建逻辑
-	return entity.BoardMessage{
-		UserQQ:    activity.ReceiverQQ,
-		SenderQQ:  activity.SenderQQ,
-		Content:   activity.Content,
-		Timestamp: activity.Timestamp,
-		TimeText:  activity.TimeText,
+	content := strings.TrimSpace(activity.Content)
+	if activity.Type == entity.TypeBoardReply && content != "" {
+		content = "[回复] " + content
 	}
+	return entity.BoardMessage{
+		UserQQ:     activity.ReceiverQQ,
+		SenderQQ:   activity.SenderQQ,
+		SenderName: activity.SenderName,
+		Content:    content,
+		Timestamp:  activity.Timestamp,
+		TimeText:   activity.TimeText,
+	}
+}
+
+func boardDedupKey(m entity.BoardMessage) string {
+	day := m.TimeText
+	if !m.Timestamp.IsZero() {
+		day = m.Timestamp.Format("2006-01-02")
+	}
+	norm := strings.TrimSpace(m.Content)
+	if len(norm) > 80 {
+		norm = norm[:80]
+	}
+	return m.SenderQQ + "|" + day + "|" + norm
 }

@@ -10,6 +10,7 @@ import (
 	"qzone-history/internal/domain/entity"
 	"qzone-history/internal/infrastructure/config"
 	"qzone-history/pkg/loghub"
+	"qzone-history/pkg/timeparse"
 	"qzone-history/pkg/utils"
 	"regexp"
 	"strings"
@@ -442,6 +443,25 @@ func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies m
 		}
 	}
 
+	trackBatch := func(batch []*entity.Activity, raw string) {
+		trackEarliest(raw)
+		refYear := timeparse.RefYearFromEarliest(earliestUnix, opts.TargetYear)
+		for _, a := range batch {
+			if a == nil {
+				continue
+			}
+			if a.Timestamp.IsZero() && a.TimeText != "" {
+				a.Timestamp = timeparse.ParseCN(a.TimeText, refYear)
+			}
+			if !a.Timestamp.IsZero() {
+				ts := a.Timestamp.Unix()
+				if earliestUnix == 0 || ts < earliestUnix {
+					earliestUnix = ts
+				}
+			}
+		}
+	}
+
 	fetchAtOffset := func(startOffset int, maxPages int, phase string) error {
 		offset := startOffset
 		for page := 0; page < maxPages; page++ {
@@ -461,7 +481,7 @@ func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies m
 			if len(batch) == 0 {
 				break
 			}
-			trackEarliest(raw)
+			trackBatch(batch, raw)
 			appendUnique(batch)
 			report(phase)
 			scanLog.tick(phase, fmt.Sprintf("offset %d", offset), len(allActivities), earliestUnix)
@@ -580,9 +600,28 @@ func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies m
 		}
 	}
 
+	scanLog.phaseStart("历史时间窗", fmt.Sprintf("按年/半年切片扫描 %d 年及更早", scanTargetYear(opts.TargetYear)))
+	report("历史时间窗")
+	for i, win := range buildYearlyWindows(opts.TargetYear) {
+		if err := checkScanCtx(ctx); err != nil {
+			return allActivities, err
+		}
+		y := time.Unix(win[0], 0).Year()
+		_ = c.fetchActivitiesInTimeWindow(ctx, cookies, uin, win[0], win[1], pageSize, 15, appendUnique, trackBatch, report, "历史时间窗")
+		if i%4 == 0 {
+			scanLog.tick("历史时间窗", fmt.Sprintf("%d 年片段", y), len(allActivities), earliestUnix)
+		}
+		if err := sleepCtx(ctx, 40*time.Millisecond); err != nil {
+			return allActivities, err
+		}
+	}
+
 	scanLog.phaseStart("set/scope 变体", "尝试不同 API 参数组合")
 	report("set/scope 变体")
-	barAdd := func(batch []*entity.Activity) int { return appendUnique(batch) }
+	barAdd := func(batch []*entity.Activity) int {
+		trackBatch(batch, "")
+		return appendUnique(batch)
+	}
 	for set := 0; set <= 3; set++ {
 		if err := checkScanCtx(ctx); err != nil {
 			return allActivities, err
@@ -599,17 +638,35 @@ func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies m
 	}
 	c.fetchActivitiesWithScope(ctx, cookies, uin, 1, pageSize, maxOff, barAdd, report)
 
-	scanLog.phaseStart("feeds3 游标", "按时间游标补充历史")
+	scanLog.phaseStart("feeds3 游标", "按时间游标深度回溯历史")
 	report("feeds3 游标")
-	for i, bt := range []int64{0, 1514736000, 1483228800, 1451606400, 1420041600, 1388534400} {
+	checkpoints := buildFeeds3Checkpoints(opts.TargetYear)
+	for i, bt := range checkpoints {
 		if err := checkScanCtx(ctx); err != nil {
 			return allActivities, err
 		}
-		c.fetchActivitiesFromFeeds3Starting(ctx, cookies, uin, bt, barAdd, report)
-		scanLog.tick("feeds3", fmt.Sprintf("游标 %d/%d", i+1, 6), len(allActivities), earliestUnix)
+		c.fetchActivitiesFromFeeds3Starting(ctx, cookies, uin, bt, appendUnique, trackBatch, report)
+		if i%5 == 0 || i == len(checkpoints)-1 {
+			scanLog.tick("feeds3", fmt.Sprintf("游标 %d/%d", i+1, len(checkpoints)), len(allActivities), earliestUnix)
+		}
 	}
 
 	report("完成")
+	refYear := timeparse.RefYearFromEarliest(earliestUnix, opts.TargetYear)
+	for _, a := range allActivities {
+		if a == nil {
+			continue
+		}
+		if a.Timestamp.IsZero() && a.TimeText != "" {
+			a.Timestamp = timeparse.ParseCN(a.TimeText, refYear)
+		}
+		if !a.Timestamp.IsZero() {
+			ts := a.Timestamp.Unix()
+			if earliestUnix == 0 || ts < earliestUnix {
+				earliestUnix = ts
+			}
+		}
+	}
 	loghub.Default().Logf("活动抓取完成，共 %d 条，最早约 %s", len(allActivities), time.Unix(earliestUnix, 0).Format("2006-01-02"))
 	if opts.TargetYear > 0 && earliestUnix > 0 {
 		y := time.Unix(earliestUnix, 0).Year()
@@ -747,13 +804,15 @@ func (c *qzoneAPIClient) fetchFeedBodyWithScope(ctx context.Context, cookies map
 func (c *qzoneAPIClient) fetchActivitiesFromFeeds3Starting(
 	ctx context.Context,
 	cookies map[string]string, uin string, startTime int64,
-	appendUnique func([]*entity.Activity) int, report func(string),
+	appendUnique func([]*entity.Activity) int,
+	trackBatch func([]*entity.Activity, string),
+	report func(string),
 ) {
 	begintime := startTime
 	if begintime == 0 {
 		begintime = time.Now().Unix()
 	}
-	for round := 0; round < 50; round++ {
+	for round := 0; round < 120; round++ {
 		if err := checkScanCtx(ctx); err != nil {
 			return
 		}
@@ -761,7 +820,8 @@ func (c *qzoneAPIClient) fetchActivitiesFromFeeds3Starting(
 		if err != nil || strings.Contains(string(body), "need login") {
 			return
 		}
-		processed := utils.ProcessFeedResponse(string(body))
+		raw := string(body)
+		processed := utils.ProcessFeedResponse(raw)
 		if !strings.Contains(processed, "li") {
 			break
 		}
@@ -769,10 +829,19 @@ func (c *qzoneAPIClient) fetchActivitiesFromFeeds3Starting(
 		if err != nil || len(batch) == 0 {
 			break
 		}
+		trackBatch(batch, raw)
 		appendUnique(batch)
 		report("feeds3")
 
-		minTs := utils.ExtractMinAbstime(string(body))
+		minTs := utils.ExtractMinAbstime(raw)
+		for _, a := range batch {
+			if a != nil && !a.Timestamp.IsZero() {
+				ts := a.Timestamp.Unix()
+				if minTs <= 0 || ts < minTs {
+					minTs = ts
+				}
+			}
+		}
 		if minTs <= 0 || minTs >= begintime {
 			break
 		}
@@ -788,7 +857,8 @@ func (c *qzoneAPIClient) fetchActivitiesFromFeeds3(
 	cookies map[string]string, uin string,
 	appendUnique func([]*entity.Activity) int, report func(string),
 ) {
-	c.fetchActivitiesFromFeeds3Starting(ctx, cookies, uin, 1514736000, appendUnique, report)
+	trackBatch := func(batch []*entity.Activity, raw string) {}
+	c.fetchActivitiesFromFeeds3Starting(ctx, cookies, uin, 1514736000, appendUnique, trackBatch, report)
 }
 
 func (c *qzoneAPIClient) fetchLegacyFeeds3(ctx context.Context, cookies map[string]string, uin string, begintime int64, count int) ([]byte, error) {
@@ -887,6 +957,10 @@ func (c *qzoneAPIClient) parseActivitiesFromHTML(processedHTML, uin string) ([]*
 		}), " ")
 
 		switch {
+		case strings.Contains(stateText, "留言") && strings.Contains(stateText, "回复"):
+			activity.Type = entity.TypeBoardReply
+		case strings.Contains(stateText, "留言"):
+			activity.Type = entity.TypeBoardMessage
 		case strings.Contains(stateText, "赞了我的说说"):
 			activity.Type = entity.TypeLike
 		case strings.Contains(stateText, "查看了我的说说"):
@@ -895,10 +969,8 @@ func (c *qzoneAPIClient) parseActivitiesFromHTML(processedHTML, uin string) ([]*
 			activity.Type = entity.TypeView
 		case strings.Contains(stateText, "评论"):
 			activity.Type = entity.TypeComment
-		case strings.Contains(stateText, "留言"):
-			activity.Type = entity.TypeBoardMessage
 		case strings.Contains(stateText, "回复"):
-			activity.Type = entity.TypeReply
+			activity.Type = entity.TypeComment
 		case strings.Contains(stateText, "发表了说说"), strings.Contains(stateText, "发表说说"):
 			activity.Type = entity.TypeMoment
 		case strings.Contains(stateText, "说说") && activity.SenderQQ == uin:
@@ -918,41 +990,7 @@ func (c *qzoneAPIClient) parseActivitiesFromHTML(processedHTML, uin string) ([]*
 }
 
 func parseTime(timeStr string) time.Time {
-	now := time.Now()
-	layouts := []string{
-		"2006年1月2日 15:04:05",
-		"2006年01月02日 15:04:05",
-		"2006年1月2日 15:04",
-		"2006年01月02日 15:04",
-		"1月2日 15:04",
-		"01月02日 15:04",
-		"昨天 15:04",
-		"15:04",
-	}
-
-	for _, layout := range layouts {
-		t, err := time.ParseInLocation(layout, timeStr, time.Local)
-		if err == nil {
-			switch layout {
-			case "2006年1月2日 15:04", "2006年01月02日 15:04":
-				// 完整日期，直接返回
-				return t
-			case "1月2日 15:04", "01月02日 15:04":
-				// 只有月日，使用当前年份
-				return time.Date(now.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), 0, 0, time.Local)
-			case "昨天 15:04":
-				// 昨天，使用当前年月，日期减一
-				yesterday := now.AddDate(0, 0, -1)
-				return time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), t.Hour(), t.Minute(), 0, 0, time.Local)
-			case "15:04":
-				// 只有时间，使用当前年月日
-				return time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, time.Local)
-			}
-		}
-	}
-
-	// 如果所有格式都无法解析，返回零值
-	return time.Time{}
+	return timeparse.ParseCN(timeStr, time.Now().Year())
 }
 
 func (c *qzoneAPIClient) GetVisibleMoments(cookies map[string]string) ([]entity.Moment, error) {
@@ -1133,7 +1171,7 @@ func (c *qzoneAPIClient) GetBoardMessages(cookies map[string]string) ([]entity.B
 	gTk := utils.GenerateGTK(cookies["p_skey"])
 
 	start := 0
-	pageSize := 20
+	pageSize := 50
 	var allMessages []entity.BoardMessage
 
 	for {

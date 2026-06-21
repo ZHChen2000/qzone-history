@@ -32,7 +32,7 @@ func (r *activityRepository) FindByUserQQ(ctx context.Context, userQQ string, li
 	} else if limit < 0 {
 		query = query.Offset(offset)
 	}
-	err := query.Find(&activities).Error
+	err := query.Order("timestamp DESC").Find(&activities).Error
 	return activities, err
 }
 

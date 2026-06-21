@@ -30,7 +30,13 @@ func (r *momentRepository) UpsertMoment(ctx context.Context, moment entity.Momen
 
 func (r *momentRepository) FindByUserQQ(ctx context.Context, userQQ string, limit, offset int) ([]entity.Moment, error) {
 	var moments []entity.Moment
-	err := r.db.DB().WithContext(ctx).Where("user_qq = ?", userQQ).Limit(limit).Offset(offset).Find(&moments).Error
+	query := r.db.DB().WithContext(ctx).Where("user_qq = ?", userQQ)
+	if limit > 0 {
+		query = query.Limit(limit).Offset(offset)
+	} else if limit < 0 {
+		query = query.Offset(offset)
+	}
+	err := query.Order("timestamp DESC").Find(&moments).Error
 	return moments, err
 }
 
