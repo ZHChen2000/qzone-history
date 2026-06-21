@@ -6,7 +6,7 @@
 
 <br>
 
-[![Version](https://img.shields.io/badge/version-v0.0.1-brightgreen)](version/version.go)
+[![Version](https://img.shields.io/badge/version-v0.0.2-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](#从源码编译)
@@ -87,12 +87,14 @@ qzone-history/
 需要 [Go 1.21+](https://go.dev/dl/)。
 
 ```powershell
-# 无黑窗口（推荐分发）
-go build -ldflags="-H windowsgui" -o qzone-history-gui.exe ./cmd/main.go
+# 无黑窗口（推荐分发，与仓库根目录预编译包相同）
+go build -ldflags="-H windowsgui -s -w -X qzone-history/version.Version=v0.0.2" -o qzone-history-gui.exe ./cmd/main.go
 
 # 带控制台（便于调试）
 go build -o qzone-history.exe ./cmd/main.go
 ```
+
+发布维护者可用 `scripts/build-release.ps1` 一键编译根目录 `qzone-history-gui.exe`（版本号自动读取 `version/version.go`）。**每次功能更新请同步提交源码与预编译 exe。**
 
 ## 技术说明
 
