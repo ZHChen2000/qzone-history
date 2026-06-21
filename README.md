@@ -1,10 +1,8 @@
 <div align="center">
 
-# QQ 空间历史恢复工具
+# QQ 空间历史恢复工具（**Qzone-History**）
 
-**Qzone-History** — 找回那些已被删除的说说与留言
 
-<br>
 
 [![Version](https://img.shields.io/badge/version-v0.0.4-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -14,12 +12,10 @@
 
 <br>
 
-从 QQ 空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，<br>
-并导出为本地 JSON 与 HTML 浏览页。
+从QQ空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，<br>
+并导出为本地JSON与HTML浏览页。
 
-<br>
-
-<sub>仅供个人备份<strong>本人</strong> QQ 空间数据 · 请遵守腾讯相关服务条款</sub>
+<sub>仅供个人备份QQ空间数据 · 请遵守<strong>腾讯相关服务条款</strong></sub>
 
 </div>
 
@@ -58,18 +54,18 @@
 
 ## 快速上手
 
-**不想编译？** 直接双击目录中的 `qzone-history-gui.exe`，按 [quickStart.md](./quickStart.md) 操作即可。
+**不想编译？** 直接双击目录中的 `qzone-history-gui.exe`，按**quickStart.md**操作即可。
 
-详细步骤、Offset 对照表、耗时预估、常见问题见 → **[quickStart.md](./quickStart.md)**
+详细步骤、Offset 对照表、耗时预估、常见问题见[quickStart.md](./quickStart.md)
 
 ## 目录结构
 
 ```
 qzone-history/
-├── qzone-history-gui.exe   # Windows 预编译（无控制台）
+├── qzone-history-gui.exe   # Windows预编译
 ├── docs/images/            # 文档配图
 ├── cmd/                    # 入口与调试工具
-├── internal/               # 业务逻辑、GUI、API 客户端
+├── internal/               # 业务逻辑、GUI、API客户端
 ├── pkg/                    # 导出、路径、日志等公共包
 ├── config/                 # 默认配置
 ├── version/                # 版本与作者信息
@@ -83,18 +79,18 @@ qzone-history/
 需要 [Go 1.21+](https://go.dev/dl/)。
 
 ```powershell
-# 无黑窗口（推荐分发，与仓库根目录预编译包相同）
+# 分发，与仓库根目录预编译包相同
 go build -ldflags="-H windowsgui -s -w -X qzone-history/version.Version=v0.0.4" -o qzone-history-gui.exe ./cmd/main.go
 
-# 带控制台（便于调试）
+# 控制台
 go build -o qzone-history.exe ./cmd/main.go
 ```
 
-发布维护者可用 `scripts/build-release.ps1` 一键编译根目录 `qzone-history-gui.exe`（版本号自动读取 `version/version.go`）。**每次功能更新请同步提交源码与预编译 exe。**
+发布维护者可用 `scripts/build-release.ps1` 一键编译根目录 `qzone-history-gui.exe`（版本号自动读取 `version/version.go`），**每次功能更新请同步提交源码与预编译 exe。**
 
 ## 技术说明
 
-本工具**不是**腾讯开放平台正式 API，而是模拟浏览器访问 QQ 空间网页版使用的内部接口（与你在浏览器中打开空间类似）。请求带登录 Cookie 与浏览器请求头，并在抓取时做间隔限速。
+本工具**不是**腾讯开放平台正式 API，而是模拟浏览器访问 QQ 空间网页版使用的内部接口（与你在浏览器中打开空间类似），请求带登录 Cookie 与浏览器请求头，并在抓取时做间隔限速。
 
 - 数据**仅保存在本机** exe 同目录，不上传任何第三方服务器
 - 深扫（大 Offset）会产生较多请求，请合理设置参数，自行承担使用风险
