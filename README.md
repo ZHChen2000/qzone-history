@@ -14,10 +14,6 @@
 
 <br>
 
-**作者：[ZHChen](https://github.com/ZHChen2000)** &nbsp;·&nbsp; **联系：QQ 1415094395**
-
-<br>
-
 从 QQ 空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，<br>
 并导出为本地 JSON 与 HTML 浏览页。
 
@@ -110,3 +106,11 @@ go build -o qzone-history.exe ./cmd/main.go
 ## 免责声明
 
 本工具仅供学习与个人数据备份。请勿用于未授权访问他人空间、商用爬取或其他违法行为。使用本工具所产生的一切后果由使用者自行承担。
+
+---
+
+<div align="center">
+
+**作者：[ZHChen](https://github.com/ZHChen2000)** &nbsp;·&nbsp; **联系：QQ 1415094395**
+
+</div>
