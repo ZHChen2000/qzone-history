@@ -22,9 +22,7 @@ archives:
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 release:
-  github:
-    owner: ZHChen2000
-    name: qzone-history
+  disable: true
 
 changelog:
   sort: asc

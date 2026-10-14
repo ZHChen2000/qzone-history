@@ -17,7 +17,7 @@ func ParseCN(timeStr string, defaultYear int) time.Time {
 
 	layouts := []struct {
 		layout string
-		kind   int // 0=full, 1=month-day, 2=yesterday, 3=time-only
+		kind   int
 	}{
 		{"2006年1月2日 15:04:05", 0},
 		{"2006年01月02日 15:04:05", 0},

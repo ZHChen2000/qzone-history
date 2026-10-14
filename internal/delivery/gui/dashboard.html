@@ -139,8 +139,6 @@
     </div>
 
     <p class="footer">
-      作者：ZHChen &nbsp;|&nbsp; 联系方式：QQ 1415094395
-      &nbsp;|&nbsp;
       <button class="btn btn-danger" style="padding:6px 14px;font-size:0.8rem" onclick="exitApp()">关闭并结束进程</button>
     </p>
   </div>
@@ -335,7 +333,7 @@
           document.getElementById('qrBox').innerHTML =
             '<span style="color:#2d8a4e">已登录</span>';
         }
-        if (j.viewerPath) document.getElementById('btnOpen').disabled = false;
+        if (j.done) document.getElementById('btnOpen').disabled = false;
       } catch (_) {}
     }
     init();

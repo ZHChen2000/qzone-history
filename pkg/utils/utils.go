@@ -5,7 +5,6 @@ import (
 	"strconv"
 )
 
-// GeneratePtqrToken generates a ptqr_token based on the provided qrsig.
 func GeneratePtqrToken(qrsig string) string {
 	e := 0
 	for i := 0; i < len(qrsig); i++ {
@@ -23,7 +22,6 @@ func ExtractUin(cookies map[string]string) string {
 	return re.ReplaceAllString(uin, "")
 }
 
-// GenerateGTK generates a GTK (g_tk) based on the provided skey.
 func GenerateGTK(skey string) string {
 	h := 5381
 	for i := 0; i < len(skey); i++ {

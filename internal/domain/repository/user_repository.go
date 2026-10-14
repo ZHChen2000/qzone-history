@@ -5,7 +5,6 @@ import (
 	"qzone-history/internal/domain/entity"
 )
 
-// UserRepository defines the interface for user storage, supporting saving, getting by QQ, and retrieving all users.
 type UserRepository interface {
 	Save(ctx context.Context, user entity.User) error
 	FindByQQ(ctx context.Context, qq string) (*entity.User, error)

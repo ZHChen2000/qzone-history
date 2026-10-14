@@ -82,7 +82,7 @@ func (s *Server) ListenAndServe() error {
 
 	addr := fmt.Sprintf("127.0.0.1:%d", DefaultPort)
 	applog.Redirect(s.hub)
-	s.hub.Logf("QQ空间历史恢复工具 %s | 作者: %s | QQ: %s", version.Version, version.Author, version.ContactQQ)
+	s.hub.Logf("QQ空间历史恢复工具 %s", version.Version)
 	s.hub.Logf("控制台已启动: http://%s", addr)
 	s.hub.Log("程序在后台运行，可关闭浏览器窗口，任务不会中断")
 	s.hub.Log("不需要后台运行时，请点击页面底部「关闭并结束进程」")
@@ -102,8 +102,13 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Write(dashboardHTML)
 }
 
+func clientStatus(st loghub.Status) loghub.Status {
+	st.ViewerPath = ""
+	return st
+}
+
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
-	st := s.hub.GetStatus()
+	st := clientStatus(s.hub.GetStatus())
 	resp := map[string]interface{}{
 		"phase":           st.Phase,
 		"running":         st.Running,
@@ -114,7 +119,6 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"userQQ":          st.UserQQ,
 		"done":            st.Done,
 		"error":           st.Error,
-		"viewerPath":      st.ViewerPath,
 		"progressPercent": st.ProgressPercent,
 		"logs":            s.hub.Logs(),
 	}
@@ -138,7 +142,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	st := s.hub.GetStatus()
+	st := clientStatus(s.hub.GetStatus())
 	fmt.Fprintf(w, "event: status\ndata: %s\n\n", mustJSON(st))
 	flusher.Flush()
 
@@ -159,7 +163,7 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "event: log\ndata: %s\n\n", mustJSON(e))
 			flusher.Flush()
 		case <-ticker.C:
-			st := s.hub.GetStatus()
+			st := clientStatus(s.hub.GetStatus())
 			fmt.Fprintf(w, "event: status\ndata: %s\n\n", mustJSON(st))
 			flusher.Flush()
 		}
@@ -249,7 +253,7 @@ func (s *Server) handleLoginPoll(w http.ResponseWriter, r *http.Request) {
 		s.mu.Lock()
 		s.loggedUser = user
 		s.mu.Unlock()
-		s.hub.Logf("登录成功: %s (%s)", user.Nickname, user.QQ)
+		s.hub.Log("登录成功")
 		writeJSON(w, map[string]interface{}{
 			"loggedIn": true,
 			"qq":       user.QQ,
@@ -438,13 +442,13 @@ func (s *Server) handleOpenViewer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := os.Stat(path); err != nil {
-		writeErr(w, fmt.Errorf("文件不存在: %s", path))
+		writeErr(w, fmt.Errorf("浏览页尚未生成或文件不存在"))
 		return
 	}
 	abs, _ := filepath.Abs(path)
 	url := "file:///" + filepath.ToSlash(abs)
 	openBrowser(url)
-	writeJSON(w, map[string]string{"url": url, "path": abs})
+	writeJSON(w, map[string]string{"ok": "1"})
 }
 
 func writeJSON(w http.ResponseWriter, v interface{}) {

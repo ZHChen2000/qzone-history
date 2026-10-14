@@ -21,11 +21,14 @@ import (
 var loginTemplate string
 
 func SaveQRCode(qrData []byte) (string, error) {
-	dir, err := os.Getwd()
+	dir, err := os.UserCacheDir()
 	if err != nil {
+		dir = os.TempDir()
+	}
+	dir = filepath.Join(dir, "qzone-history")
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", err
 	}
-
 	filename := filepath.Join(dir, "qrcode.png")
 
 	err = os.WriteFile(filename, qrData, 0644)

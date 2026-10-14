@@ -179,7 +179,7 @@ func (a *App) RunPipeline(ctx context.Context, user *entity.User, opts RunOption
 		s.ProgressPercent = 100
 		s.ViewerPath = viewer
 	})
-	hub.Logf("全部完成！浏览页: %s", viewer)
+	hub.Log("全部完成，可打开浏览页查看导出结果")
 	return nil
 }
 

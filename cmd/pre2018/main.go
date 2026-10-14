@@ -61,10 +61,10 @@ func main() {
 		if n == 0 {
 			continue
 		}
-		if minTs > 0 && minTs < 1514764800 { // before 2018-01-01
+		if minTs > 0 && minTs < 1514764800 {
 			fmt.Printf("*** offset=%d min=%s (2018前!) ***\n", off, qzone_api.FormatUnix(minTs))
 			bestMin = minTs
-		} else if minTs > 0 && minTs < 1546300800 { // before 2019
+		} else if minTs > 0 && minTs < 1546300800 {
 			fmt.Printf("offset=%d min=%s\n", off, qzone_api.FormatUnix(minTs))
 			if bestMin == 0 || minTs < bestMin {
 				bestMin = minTs
@@ -76,11 +76,11 @@ func main() {
 	fmt.Println("\n--- feeds3 basetime 历史 ---")
 	timestamps := []int64{
 		0,
-		1483228800, // 2017-01-01
-		1451606400, // 2016-01-01
-		1420041600, // 2015-01-01
-		1388534400, // 2014-01-01
-		1356998400, // 2013-01-01
+		1483228800,
+		1451606400,
+		1420041600,
+		1388534400,
+		1356998400,
 	}
 	for _, bt := range timestamps {
 		body, err := qzone_api.ProbeLegacyFeeds3(cookies, uin, bt, 50)

@@ -2,13 +2,10 @@
 
 # QQ 空间历史恢复工具（**Qzone-History**）
 
-
-
 [![Version](https://img.shields.io/badge/version-v0.0.4-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go&logoColor=white)](https://go.dev/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=flat&logo=windows&logoColor=white)](#从源码编译)
-[![GitHub](https://img.shields.io/badge/GitHub-ZHChen2000/qzone--history-181717?style=flat&logo=github)](https://github.com/ZHChen2000/qzone-history)
 
 <br>
 
@@ -18,28 +15,6 @@
 <sub>仅供个人备份QQ空间数据 · 请遵守<strong>腾讯相关服务条款</strong></sub>
 
 </div>
-
----
-
-## 界面预览
-
-双击 `qzone-history-gui.exe` 后，浏览器自动打开 Web 控制台，扫码登录即可开始恢复：
-
-<p align="center">
-  <img src="docs/images/gui-overview.png" alt="控制台总览" width="720">
-</p>
-
-实时日志与抓取进度：
-
-<p align="center">
-  <img src="docs/images/gui-logs.png" alt="运行日志与进度" width="720">
-</p>
-
-恢复完成后，在本地 HTML 浏览页按时间线查看说说、留言与活动记录：
-
-<p align="center">
-  <img src="docs/images/viewer-result.png" alt="恢复结果浏览页" width="720">
-</p>
 
 ---
 
@@ -54,21 +29,20 @@
 
 ## 快速上手
 
-**不想编译？** 直接双击目录中的 `qzone-history-gui.exe`，按**quickStart.md**操作即可。
+**不想编译？** 直接双击目录中的 `qzone-history-gui.exe`，按 **quickStart.md** 操作即可。
 
-详细步骤、Offset 对照表、耗时预估、常见问题见[quickStart.md](./quickStart.md)
+详细步骤、Offset 对照表、耗时预估、常见问题见 [quickStart.md](./quickStart.md)
 
 ## 目录结构
 
 ```
 qzone-history/
 ├── qzone-history-gui.exe   # Windows预编译
-├── docs/images/            # 文档配图
 ├── cmd/                    # 入口与调试工具
 ├── internal/               # 业务逻辑、GUI、API客户端
 ├── pkg/                    # 导出、路径、日志等公共包
 ├── config/                 # 默认配置
-├── version/                # 版本与作者信息
+├── version/                # 版本信息
 ├── go.mod
 ├── README.md
 └── quickStart.md
@@ -79,14 +53,12 @@ qzone-history/
 需要 [Go 1.21+](https://go.dev/dl/)。
 
 ```powershell
-# 分发，与仓库根目录预编译包相同
 go build -ldflags="-H windowsgui -s -w -X qzone-history/version.Version=v0.0.4" -o qzone-history-gui.exe ./cmd/main.go
 
-# 控制台
 go build -o qzone-history.exe ./cmd/main.go
 ```
 
-发布维护者可用 `scripts/build-release.ps1` 一键编译根目录 `qzone-history-gui.exe`（版本号自动读取 `version/version.go`），**每次功能更新请同步提交源码与预编译 exe。**
+也可运行 `scripts/build-release.ps1` 生成根目录 `qzone-history-gui.exe`（版本号读取 `version/version.go`）。
 
 ## 技术说明
 
@@ -102,11 +74,3 @@ go build -o qzone-history.exe ./cmd/main.go
 ## 免责声明
 
 本工具仅供学习与个人数据备份。请勿用于未授权访问他人空间、商用爬取或其他违法行为。使用本工具所产生的一切后果由使用者自行承担。
-
----
-
-<div align="center">
-
-**作者：[ZHChen](https://github.com/ZHChen2000)** &nbsp;·&nbsp; **联系：QQ 1415094395**
-
-</div>

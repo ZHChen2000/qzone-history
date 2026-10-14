@@ -1,26 +1,36 @@
-# 用户运行时产生的数据（切勿提交）
+# Login session and local databases (cookies, user rows)
 session.db
 app.db
 *.db
-qrcode.png
-.env
-.env.*
+*.db-journal
+*.db-wal
+*.db-shm
 
-# 用户导出目录与文件
+# QR login temp file (CLI; GUI uses in-memory / system cache dir)
+qrcode.png
+
+# Per-user export trees and files (exe directory)
 [0-9]*/
+[0-9]*_export.json
+[0-9]*_activities.json
+[0-9]*_view.html
 *_export.json
 *_activities.json
 *_view.html
 
-# 日志与调试输出
+# Secrets / env
+.env
+.env.*
+
+# Logs and debug dumps
 *.log
 *.log.*
 debug_*.txt
 
-# 构建产物（发布包中已附带 gui 版 exe，源码编译产物可忽略）
-# qzone-history-gui.exe  # 发布目录保留预编译 exe
+# Local build outputs (release script still writes gui exe when needed)
+qzone-history.exe
 
-# IDE / 系统
+# IDE / OS
 .idea/
 .vscode/
 *.iml

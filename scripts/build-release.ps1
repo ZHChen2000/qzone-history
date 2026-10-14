@@ -1,4 +1,3 @@
-# Build Windows GUI release binary (version from version/version.go).
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 

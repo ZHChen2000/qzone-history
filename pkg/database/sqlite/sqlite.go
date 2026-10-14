@@ -11,19 +11,15 @@ type SQLiteDB struct {
 	db *gorm.DB
 }
 
-// NewSQLiteDB creates a new SQLite database instance.
 func NewSQLiteDB() database.Database {
 	return &SQLiteDB{}
 }
 
-// Connect connects to the SQLite database.
-// If `DBName` is empty, it will use an in-memory database.
 func (s *SQLiteDB) Connect(config *database.Config) error {
 	var dsn string
 	if config.DBName != "" {
 		dsn = config.DBName
 	} else {
-		// Use in-memory database
 		dsn = ":memory:"
 	}
 
@@ -36,7 +32,6 @@ func (s *SQLiteDB) Connect(config *database.Config) error {
 	return nil
 }
 
-// Close closes the SQLite database connection.
 func (s *SQLiteDB) Close() error {
 	sqlDB, err := s.db.DB()
 	if err != nil {
@@ -45,7 +40,6 @@ func (s *SQLiteDB) Close() error {
 	return sqlDB.Close()
 }
 
-// DB returns the GORM DB instance.
 func (s *SQLiteDB) DB() *gorm.DB {
 	return s.db
 }

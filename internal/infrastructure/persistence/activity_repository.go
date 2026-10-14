@@ -16,7 +16,6 @@ func NewActivityRepository(db database.Database) repository.ActivityRepository {
 }
 
 func (r *activityRepository) BatchImport(ctx context.Context, activities []entity.Activity) error {
-	//return r.db.DB().WithContext(ctx).CreateInBatches(&activities, 100).Error
 	return r.db.DB().WithContext(ctx).Save(&activities).Error
 }
 
