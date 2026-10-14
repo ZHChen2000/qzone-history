@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QQ空间历史恢复</title>
+  <title>QQ空间个人数据备份</title>
   <style>
     :root {
       --bg: #0f1419;
@@ -94,7 +94,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>QQ空间历史恢复工具</h1>
+    <h1>QQ空间个人数据备份</h1>
     <p class="sub">后台运行，不影响您使用电脑。关闭本页面不会停止任务，重新打开即可继续查看进度。</p>
 
     <div class="grid grid-2">
@@ -111,15 +111,15 @@
 
       <div class="card">
         <h2>② 抓取设置</h2>
-        <label for="targetYear">至少恢复到哪一年（及更早）</label>
+        <label for="targetYear">至少备份到哪一年（及更早）</label>
         <input type="number" id="targetYear" value="2017" min="2005" max="2026" onchange="recommendOffset()">
         <p class="hint" id="offsetHint">选择年份后自动推荐 offset</p>
         <label for="maxOffset" style="margin-top:12px">Max Offset（可手动调大）</label>
         <input type="number" id="maxOffset" value="25000" min="500" step="500">
-        <p class="hint">offset 与年份<strong>非线性</strong>。若恢复后最早时间仍不够早，请逐步调大（如 +10000）后重试。</p>
+        <p class="hint">offset 与年份<strong>非线性</strong>。若备份后最早时间仍不够早，请逐步调大（如 +10000）后重试。</p>
         <p class="hint" id="estimateHint" style="margin-top:10px;color:var(--warn)"></p>
         <div class="btn-row">
-          <button class="btn btn-primary" id="btnStart" onclick="startRun()">开始恢复</button>
+          <button class="btn btn-primary" id="btnStart" onclick="startRun()">开始备份</button>
           <button class="btn btn-secondary" id="btnStop" onclick="stopRun()" disabled>停止</button>
           <button class="btn btn-success" id="btnOpen" onclick="openViewer()" disabled>打开浏览页</button>
         </div>
@@ -213,7 +213,7 @@
       const maxOffset = parseInt(document.getElementById('maxOffset').value, 10);
       try {
         const est = await api('/api/recommend?year=' + targetYear + '&maxOffset=' + maxOffset);
-        const msg = (est.estimate || '本次扫描可能耗时较长') + '\n\n确定开始恢复吗？';
+        const msg = (est.estimate || '本次扫描可能耗时较长') + '\n\n确定开始备份吗？';
         if (!confirm(msg)) return;
         await api('/api/run', {
           method: 'POST',
@@ -248,7 +248,7 @@
     }
 
     async function exitApp() {
-      if (!confirm('确定要关闭控制台并结束程序吗？\n若恢复任务正在运行，将被中断。')) {
+      if (!confirm('确定要关闭控制台并结束程序吗？\n若备份任务正在运行，将被中断。')) {
         return;
       }
       try {

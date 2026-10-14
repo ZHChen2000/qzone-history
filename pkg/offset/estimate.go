@@ -75,7 +75,7 @@ func EstimateScan(targetYear, maxOffset int) (minMinutes, maxMinutes int) {
 
 func EstimateScanText(targetYear, maxOffset int) string {
 	lo, hi := EstimateScan(targetYear, maxOffset)
-	return "预计本次完整恢复约 " + itoa(lo) + "–" + itoa(hi) + " 分钟"
+	return "预计本次完整备份约 " + itoa(lo) + "–" + itoa(hi) + " 分钟"
 }
 
 func minInt(a, b int) int {

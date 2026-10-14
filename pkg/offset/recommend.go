@@ -48,7 +48,7 @@ func RecommendHint(targetYear int) string {
 
 func fmtHint(year, off int) string {
 	return "目标 " + itoa(year) + " 年及更早：建议 max offset ≥ " + itoa(off) +
-		"。若恢复后最早时间仍不够早，请逐步调大 offset（如 +10000）后重试。"
+		"。若备份后最早时间仍不够早，请逐步调大 offset（如 +10000）后重试。"
 }
 
 func itoa(n int) string {

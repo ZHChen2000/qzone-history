@@ -96,7 +96,7 @@ func (a *App) RunPipeline(ctx context.Context, user *entity.User, opts RunOption
 		return err
 	}
 
-	hub.Log("获取活动记录（用于恢复已删说说）...")
+	hub.Log("获取活动记录（用于备份已删说说）...")
 	hub.SetStatus(func(s *loghub.Status) { s.Phase = "扫描活动记录" })
 	_, err = a.activityUseCase.FetchActivities(ctx, *user, opts.MaxOffset, opts.TargetYear)
 	if errors.Is(err, context.Canceled) {

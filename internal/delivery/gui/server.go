@@ -82,7 +82,7 @@ func (s *Server) ListenAndServe() error {
 
 	addr := fmt.Sprintf("127.0.0.1:%d", DefaultPort)
 	applog.Redirect(s.hub)
-	s.hub.Logf("QQ空间历史恢复工具 %s", version.Version)
+	s.hub.Logf("QQ空间个人数据备份 %s", version.Version)
 	s.hub.Logf("控制台已启动: http://%s", addr)
 	s.hub.Log("程序在后台运行，可关闭浏览器窗口，任务不会中断")
 	s.hub.Log("不需要后台运行时，请点击页面底部「关闭并结束进程」")
@@ -365,7 +365,7 @@ func (s *Server) runJob(ctx context.Context, user *entity.User, opts app.RunOpti
 		s.hub.Logf("同步登录状态: %v（继续尝试）", err)
 	}
 
-	s.hub.Logf("开始恢复，目标年份 ≥ %d，max offset = %d", opts.TargetYear, opts.MaxOffset)
+	s.hub.Logf("开始备份，目标年份 ≥ %d，max offset = %d", opts.TargetYear, opts.MaxOffset)
 	s.hub.Log(offset.RecommendHint(opts.TargetYear))
 	s.hub.Log(offset.EstimateScanText(opts.TargetYear, opts.MaxOffset))
 

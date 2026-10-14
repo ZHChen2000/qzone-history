@@ -1,6 +1,6 @@
 <div align="center">
 
-# QQ 空间历史恢复工具（**Qzone-History**）
+# QQ 空间个人数据备份（**Qzone-History**）
 
 [![Version](https://img.shields.io/badge/version-v0.0.4-brightgreen)](version/version.go)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -9,10 +9,10 @@
 
 <br>
 
-从QQ空间「与我相关」活动记录、说说接口、留言板接口中，尽可能恢复**已删除的说说与留言**，<br>
-并导出为本地JSON与HTML浏览页。
+从 QQ 空间「与我相关」活动记录、说说与留言板接口拉取数据，**备份**动态与留言（含已从页面删除、仍可从活动记录重建的内容），<br>
+并导出为本地 JSON 与 HTML 浏览页。
 
-<sub>仅供个人备份QQ空间数据 · 请遵守<strong>腾讯相关服务条款</strong></sub>
+<sub>仅供个人数据备份 · 请遵守<strong>腾讯相关服务条款</strong></sub>
 
 </div>
 
@@ -23,7 +23,7 @@
 - QQ 扫码登录（官方登录流程，Cookie 仅存本机）
 - Web 控制台：实时日志、进度、可停止 / 可退出进程
 - 按目标年份推荐 Max Offset，支持手动调大深扫
-- 恢复未删除说说、从活动记录重建已删说说
+- 备份未删除说说，并从活动记录补全已删说说
 - 留言板 API 拉取，失败时从活动记录重建
 - 导出 `{QQ}_export.json`、`{QQ}_activities.json`、`{QQ}_view.html`
 
