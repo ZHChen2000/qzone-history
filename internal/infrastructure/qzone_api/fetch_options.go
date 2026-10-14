@@ -2,6 +2,7 @@ package qzone_api
 
 import (
 	"context"
+	"qzone-history/internal/domain/entity"
 	"qzone-history/pkg/loghub"
 	"time"
 )
@@ -10,6 +11,8 @@ type FetchOptions struct {
 	MaxOffset  int
 	TargetYear int
 	Ctx        context.Context
+	// OnBatch persists each newly discovered page before the scan proceeds.
+	OnBatch func([]*entity.Activity) error
 }
 
 func DefaultFetchOptions() FetchOptions {

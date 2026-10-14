@@ -53,47 +53,74 @@ func (a *activityUseCase) generateActivityID(message *entity.Activity) string {
 	return hex.EncodeToString(hash[:])
 }
 func (a *activityUseCase) FetchActivities(ctx context.Context, user entity.User, maxOffset, targetYear int) ([]entity.Activity, error) {
-	activitiesPtr, err := a.qzoneAPI.GetAllActivities(user.Cookies, qzone_api.FetchOptions{
-		MaxOffset:  maxOffset,
-		TargetYear: targetYear,
-		Ctx:        ctx,
-	})
-
-	activities := make([]entity.Activity, 0, len(activitiesPtr))
-	for i, actPtr := range activitiesPtr {
-		activities = append(activities, *actPtr)
-		activities[i].ID = a.generateActivityID(actPtr)
+	if ctx == nil {
+		ctx = context.Background()
 	}
-
-	if len(activities) == 0 {
-		if err != nil && errors.Is(err, context.Canceled) {
-			return nil, err
+	saved := make(map[string]struct{})
+	streamingAttempted := false
+	convert := func(items []*entity.Activity) []entity.Activity {
+		result := make([]entity.Activity, 0, len(items))
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+			copy := *item
+			copy.ID = a.generateActivityID(item)
+			result = append(result, copy)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("获取所有活动失败: %w", err)
+		return result
+	}
+	persist := func(items []*entity.Activity) error {
+		streamingAttempted = true
+		batch := convert(items)
+		if len(batch) == 0 {
+			return nil
+		}
+		if err := a.activityRepo.BatchImport(ctx, batch); err != nil {
+			return err
+		}
+		for _, activity := range batch {
+			saved[activity.ID] = struct{}{}
+		}
+		return nil
+	}
+	activitiesPtr, fetchErr := a.qzoneAPI.GetAllActivities(user.Cookies, qzone_api.FetchOptions{
+		MaxOffset: maxOffset, TargetYear: targetYear, Ctx: ctx, OnBatch: persist,
+	})
+	activities := convert(activitiesPtr)
+	if len(activities) == 0 {
+		if fetchErr != nil && errors.Is(fetchErr, context.Canceled) {
+			return nil, fetchErr
+		}
+		if fetchErr != nil {
+			return nil, fmt.Errorf("获取所有活动失败: %w", fetchErr)
 		}
 		return activities, nil
 	}
-
-	batchSize := 100
-	for i := 0; i < len(activities); i += batchSize {
+	if fetchErr != nil && streamingAttempted {
+		return activities, fetchErr
+	}
+	// Existing clients that do not stream batches are still supported. Already
+	// checkpointed activities are not written again at the end of a scan.
+	pending := make([]entity.Activity, 0, len(activities))
+	for _, activity := range activities {
+		if _, ok := saved[activity.ID]; !ok {
+			pending = append(pending, activity)
+		}
+	}
+	for start := 0; start < len(pending); start += 100 {
 		if err := ctx.Err(); err != nil {
-			return activities[:i], err
+			return activities, err
 		}
-		end := i + batchSize
-		if end > len(activities) {
-			end = len(activities)
+		end := start + 100
+		if end > len(pending) {
+			end = len(pending)
 		}
-		batch := activities[i:end]
-		if saveErr := a.activityRepo.BatchImport(ctx, batch); saveErr != nil {
-			return nil, fmt.Errorf("保存活动批次 %d-%d 失败: %w", i, end, saveErr)
+		if err := a.activityRepo.BatchImport(ctx, pending[start:end]); err != nil {
+			return activities, fmt.Errorf("保存活动批次 %d-%d 失败: %w", start, end, err)
 		}
 	}
-
-	if err != nil {
-		return activities, err
-	}
-	return activities, nil
+	return activities, fetchErr
 }
 
 func (a *activityUseCase) FetchActivity(ctx context.Context, user entity.User, offset int) (entity.Activity, error) {

@@ -156,6 +156,21 @@
       .toolbar, .main { padding-left: 16px; padding-right: 16px; }
       .card { padding: 14px 16px; }
     }
+    .search-box { flex-wrap: wrap; }
+    .search-box input { min-width: 150px; }
+    .view-note { color: var(--muted); font-size: .85rem; margin: 0 0 14px; }
+    .badge.duplicate { background: #ede9fe; color: #6d28d9; }
+    .badge.forward { background: #e0f2fe; color: #0369a1; }
+    .record-details { margin-top: 12px; border-top: 1px dashed var(--border); }
+    .record-details > summary { cursor: pointer; padding: 12px 0 0; color: #0369a1; font-size: .88rem; }
+    .record-details[open] > summary { padding-bottom: 12px; }
+    .record-detail + .record-detail { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+    .record-origin { color: var(--muted); font-size: .82rem; margin-bottom: 8px; overflow-wrap: anywhere; }
+    .raw-text { margin-top: 8px; font-size: .82rem; color: var(--muted); }
+    .raw-text summary { cursor: pointer; }
+    .raw-text pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px; background: #f8fafc; border-radius: 6px; }
+    .card-header { flex-wrap: wrap; }
+    .card-header .time { white-space: normal; }
   </style>
 </head>
 <body>
@@ -175,10 +190,18 @@
     </div>
     <div class="search-box">
       <input type="search" id="search" placeholder="搜索内容…" autocomplete="off">
-      <select class="filter-select" id="moment-filter" style="display:none">
+      <select class="filter-select" id="time-order" aria-label="时间排序" title="无法确定日期的记录排在最后">
+        <option value="desc">最新在前</option>
+        <option value="asc">最早在前</option>
+      </select>
+      <select class="filter-select" id="moment-filter" aria-label="说说来源">
         <option value="all">全部说说</option>
         <option value="visible">未删除</option>
         <option value="reconstructed">已重建</option>
+      </select>
+      <select class="filter-select" id="duplicate-mode" aria-label="重复记录显示">
+        <option value="fold">折叠疑似重复</option>
+        <option value="all">逐条显示</option>
       </select>
       <select class="filter-select" id="activity-filter" style="display:none">
         <option value="all">全部类型</option>
@@ -253,29 +276,52 @@
       return html;
     }
 
+    const timeCache = new WeakMap();
+
+    function calendarTime(year, month, day, hour = 0, minute = 0, second = 0) {
+      if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+      const local = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+      if (local.getUTCFullYear() !== year || local.getUTCMonth() !== month - 1 || local.getUTCDate() !== day) return null;
+      return new Date(local.getTime() - 8 * 60 * 60 * 1000);
+    }
+
     function parseTime(item) {
+      if (timeCache.has(item)) return timeCache.get(item);
+      let result = null;
       const ts = item.timestamp;
       if (ts && !ts.startsWith('0001-01-01')) {
-        const d = new Date(ts);
-        if (!isNaN(d)) return d;
+        const date = new Date(ts);
+        if (Number.isFinite(date.getTime())) result = date;
       }
-      const tt = cleanText(item.timeText);
-      if (tt) return { label: tt, sortKey: 0 };
-      return { label: '未知时间', sortKey: 0 };
+      const text = cleanText(item.timeText).replace(/\\[nr]/g, ' ').trim();
+      if (!result) {
+        const cn = text.match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日(?:\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+        const iso = text.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+        const match = cn || iso;
+        if (match) result = calendarTime(Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4] || 0), Number(match[5] || 0), Number(match[6] || 0));
+      }
+      result = result || { label: text || '未知时间' };
+      timeCache.set(item, result);
+      return result;
     }
 
     function timeLabel(item) {
-      const t = parseTime(item);
-      if (t instanceof Date) {
-        return t.toLocaleString('zh-CN', { hour12: false });
-      }
-      return t.label || '未知时间';
+      const time = parseTime(item);
+      if (time instanceof Date) return time.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+      return time.label || '未知时间';
     }
 
     function sortKey(item) {
-      const t = parseTime(item);
-      if (t instanceof Date) return t.getTime();
-      return -1;
+      const time = parseTime(item);
+      return time instanceof Date ? time.getTime() : null;
+    }
+
+    function compareByTime(a, b) {
+      const left = sortKey(a);
+      const right = sortKey(b);
+      if (left === null) return right === null ? 0 : 1;
+      if (right === null) return -1;
+      return document.getElementById('time-order').value === 'asc' ? left - right : right - left;
     }
 
     function renderImages(urls) {
@@ -301,7 +347,7 @@
       const visible = m.filter(x => !x.isReconstructed).length;
       const recon = m.filter(x => x.isReconstructed).length;
       document.getElementById('stats').innerHTML = `
-        <div class="stat"><strong>${m.length}</strong>说说（${visible} 未删 + ${recon} 重建）</div>
+        <div class="stat"><strong>${m.length}</strong>说说记录（${visible} 未删 + ${recon} 重建）</div>
         <div class="stat"><strong>${(DATA.boardMessages||[]).length}</strong>留言板</div>
         <div class="stat"><strong>${(DATA.activities||[]).length}</strong>活动记录</div>
       `;
@@ -312,55 +358,142 @@
       return cleanText(text).toLowerCase().includes(searchQuery.toLowerCase());
     }
 
+    const activityEvidence = new Map();
+    function evidenceKey(user, content) { return String(user || '') + '\u0000' + String(content || ''); }
+    for (const activity of DATA.activities || []) {
+      const key = evidenceKey(activity.receiverQQ, activity.content);
+      if (!activityEvidence.has(key)) activityEvidence.set(key, []);
+      activityEvidence.get(key).push(activity);
+    }
+    function evidenceFor(moment) {
+      return moment.isReconstructed ? activityEvidence.get(evidenceKey(moment.userQQ, moment.content)) || [] : [];
+    }
+    function hasForwardEvidence(moment) { return evidenceFor(moment).some(activity => activity.type === 1); }
+    function contentParts(moment) {
+      const text = cleanText(moment.content);
+      if (moment.isReconstructed) {
+        const colon = text.indexOf('：');
+        if (colon > 0 && colon < 40 && text.slice(colon + 1).trim()) {
+          return { prefix: text.slice(0, colon).trim(), body: text.slice(colon + 1).trim() };
+        }
+      }
+      return { prefix: '', body: text };
+    }
+
+    // A "liked my post" record provides a self-post clue. An activity actor
+    // alone is never treated as the original post author.
+    const originalsByBody = new Map();
+    for (const moment of DATA.moments || []) {
+      if (moment.isReconstructed || (moment.senderQQ && moment.senderQQ !== DATA.userQQ)) continue;
+      const body = contentParts(moment).body;
+      if (!body) continue;
+      if (!originalsByBody.has(body)) originalsByBody.set(body, []);
+      originalsByBody.get(body).push(moment);
+    }
+    const ownPrefixes = new Set();
+    for (const moment of DATA.moments || []) {
+      if (!moment.isReconstructed || hasForwardEvidence(moment)) continue;
+      const parts = contentParts(moment);
+      const originals = originalsByBody.get(parts.body) || [];
+      if (parts.prefix && originals.length === 1 && evidenceFor(moment).some(activity => activity.type === 2)) ownPrefixes.add(parts.prefix);
+    }
+
+    function groupMoments(items, fold) {
+      const groups = [], byKey = new Map();
+      for (const moment of items) {
+        const parts = contentParts(moment);
+        let key = null;
+        if (fold && parts.body) {
+          if (!moment.isReconstructed && moment.id) {
+            key = 'original|' + moment.userQQ + '|' + moment.id;
+          } else if (moment.isReconstructed) {
+            const originals = originalsByBody.get(parts.body) || [];
+            const selfEvidence = evidenceFor(moment).some(activity => activity.type === 2);
+            const linksOriginal = !hasForwardEvidence(moment) && originals.length === 1 && originals[0].id &&
+              moment.userQQ === DATA.userQQ && (selfEvidence || (parts.prefix && ownPrefixes.has(parts.prefix)));
+            key = linksOriginal
+              ? 'original|' + originals[0].userQQ + '|' + originals[0].id
+              : (hasForwardEvidence(moment) ? 'forward|' : 'unconfirmed|') + cleanText(moment.content);
+          }
+        }
+        let group = key === null ? null : byKey.get(key);
+        if (!group) { group = { records: [] }; groups.push(group); if (key !== null) byKey.set(key, group); }
+        group.records.push(moment);
+      }
+      for (const group of groups) {
+        group.representative = group.records.find(moment => !moment.isReconstructed) || group.records.reduce((best, item) => {
+          const left = sortKey(best), right = sortKey(item);
+          return right !== null && (left === null || right < left) ? item : best;
+        });
+      }
+      return groups.sort((a, b) => compareByTime(a.representative, b.representative));
+    }
+
+    function momentBadges(moment) {
+      let text = moment.isReconstructed ? '<span class="badge reconstructed">已重建</span>' : '<span class="badge">未删除说说</span>';
+      if (moment.isDeleted) text += '<span class="badge deleted">已删除</span>';
+      if (hasForwardEvidence(moment)) text += '<span class="badge forward">含转发线索</span>';
+      return text;
+    }
+    function renderMomentRecord(moment, number) {
+      const comments = (moment.comments || []).filter(comment => comment && comment.content);
+      const evidence = evidenceFor(moment);
+      const types = [...new Set(evidence.map(activity => ACTIVITY_TYPES[activity.type] || '其他'))];
+      const sameActor = evidence.find(activity => activity.senderQQ === moment.senderQQ);
+      const actor = sameActor && sameActor.senderName ? sameActor.senderName + '（QQ ' + moment.senderQQ + '）' : moment.senderQQ;
+      const origin = moment.isReconstructed ? '来自活动记录重建' : '来自现有说说接口';
+      const dateLabel = moment.isReconstructed ? '记录时间' : '发表时间';
+      const parts = [
+        '<div class="record-detail"><div class="card-header"><div>',
+        number ? '<span class="badge type">记录 ' + number + '</span>' : '', momentBadges(moment),
+        '</div><time class="time">' + dateLabel + '：' + esc(timeLabel(moment)) + '</time></div>',
+        '<div class="record-origin">' + esc(origin),
+        contentParts(moment).prefix ? ' · 原文前缀：' + esc(contentParts(moment).prefix) : '',
+        types.length ? ' · 关联活动：' + esc(types.join('、')) : '',
+        moment.isReconstructed && actor ? ' · 活动人物：' + esc(actor) : '',
+        '</div><div class="content">' + formatContent(moment.content, moment.isReconstructed) + '</div>',
+        renderImages(moment.imageURLs), '<div class="meta-row">',
+        moment.likes ? '<span>👍 ' + moment.likes + '</span>' : '',
+        moment.views ? '<span>👁 ' + moment.views + '</span>' : '',
+        comments.length ? '<span>💬 ' + comments.length + ' 条评论</span>' : '', '</div>'
+      ];
+      if (comments.length) parts.push('<div class="comments">' + comments.map(comment => '<div class="comment"><span class="qq">' + esc(comment.userQQ || '匿名') + '</span>：' + formatContent(comment.content) + '<span style="color:#9ca3af;margin-left:6px">' + esc(timeLabel(comment)) + '</span></div>').join('') + '</div>');
+      parts.push('<details class="raw-text"><summary>查看原始文字及前缀</summary><pre>' + esc(moment.content || '') + '</pre></details></div>');
+      return parts.join('');
+    }
+    function renderMomentGroup(group) {
+      const records = group.records.slice().sort(compareByTime);
+      if (records.length === 1) return '<article class="card moment-group">' + renderMomentRecord(records[0]) + '</article>';
+      const representative = group.representative;
+      return [
+        '<article class="card moment-group"><div class="card-header"><div>',
+        '<span class="badge duplicate">疑似重复 · ' + records.length + ' 条记录</span>', momentBadges(representative),
+        '</div><time class="time">' + (representative.isReconstructed ? '最早记录：' : '发表时间：') + esc(timeLabel(representative)) + '</time></div>',
+        '<div class="content">' + formatContent(representative.content, representative.isReconstructed) + '</div>', renderImages(representative.imageURLs),
+        '<details class="record-details"><summary>展开比较全部 ' + records.length + ' 条记录的时间、图片和来源</summary><div>',
+        records.map((moment, index) => renderMomentRecord(moment, index + 1)).join(''), '</div></details></article>'
+      ].join('');
+    }
     function renderMoments() {
       const filter = document.getElementById('moment-filter').value;
       let items = [...(DATA.moments || [])];
-      items.sort((a, b) => sortKey(b) - sortKey(a));
-
-      if (filter === 'visible') items = items.filter(x => !x.isReconstructed);
-      if (filter === 'reconstructed') items = items.filter(x => x.isReconstructed);
-      items = items.filter(x => matchesSearch(x.content));
-
+      if (filter === 'visible') items = items.filter(item => !item.isReconstructed);
+      if (filter === 'reconstructed') items = items.filter(item => item.isReconstructed);
+      items = items.filter(item => matchesSearch(item.content));
       const el = document.getElementById('panel-moments');
-      if (!items.length) {
-        el.innerHTML = '<div class="empty">没有匹配的说说</div>';
-        return;
-      }
-      el.innerHTML = items.map(m => {
-        const badges = [];
-        if (m.isReconstructed) badges.push('<span class="badge reconstructed">已重建</span>');
-        if (m.isDeleted) badges.push('<span class="badge deleted">已删除</span>');
-        const comments = (m.comments || []).filter(c => c && c.content);
-        const commentsHtml = comments.length ? `
-          <div class="comments">
-            ${comments.map(c => `
-              <div class="comment">
-                <span class="qq">${esc(c.userQQ || '匿名')}</span>：
-                ${formatContent(c.content)}
-                <span style="color:#9ca3af;margin-left:6px">${esc(cleanText(c.timeText) || '')}</span>
-              </div>`).join('')}
-          </div>` : '';
-        return `
-          <article class="card">
-            <div class="card-header">
-              <div>${badges.join('')}</div>
-              <time class="time">${esc(timeLabel(m))}</time>
-            </div>
-            <div class="content">${formatContent(m.content, true)}</div>
-            ${renderImages(m.imageURLs)}
-            <div class="meta-row">
-              ${m.likes ? `<span>👍 ${m.likes}</span>` : ''}
-              ${m.views ? `<span>👁 ${m.views}</span>` : ''}
-              ${comments.length ? `<span>💬 ${comments.length} 条评论</span>` : ''}
-            </div>
-            ${commentsHtml}
-          </article>`;
-      }).join('');
+      if (!items.length) { el.innerHTML = '<div class="empty">没有匹配的说说</div>'; return; }
+      const fold = document.getElementById('duplicate-mode').value === 'fold';
+      const groups = groupMoments(items, fold);
+      const duplicateGroups = groups.filter(group => group.records.length > 1).length;
+      const note = fold
+        ? '共 ' + items.length + ' 条原始记录，显示 ' + groups.length + ' 项，折叠 ' + duplicateGroups + ' 组疑似重复。相同文案可能来自不同说说，展开可比较；有转发线索、不同来源前缀或多个原说说候选时不自动关联。'
+        : '逐条显示全部 ' + items.length + ' 条记录。重建记录的时间可能是互动时间。';
+      el.innerHTML = '<p class="view-note">' + esc(note) + '</p>' + groups.map(renderMomentGroup).join('');
     }
 
     function renderBoard() {
       let items = [...(DATA.boardMessages || [])];
-      items.sort((a, b) => sortKey(b) - sortKey(a));
+      items.sort(compareByTime);
       items = items.filter(x => matchesSearch(x.content));
 
       const el = document.getElementById('panel-board');
@@ -382,7 +515,7 @@
     function renderActivities() {
       const filter = document.getElementById('activity-filter').value;
       let items = [...(DATA.activities || [])];
-      items.sort((a, b) => sortKey(b) - sortKey(a));
+      items.sort(compareByTime);
       if (filter !== 'all') items = items.filter(x => String(x.type) === filter);
       items = items.filter(x => matchesSearch(x.content) || matchesSearch(x.senderName));
 
@@ -424,6 +557,7 @@
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById('panel-' + currentPanel).classList.add('active');
         document.getElementById('moment-filter').style.display = currentPanel === 'moments' ? '' : 'none';
+        document.getElementById('duplicate-mode').style.display = currentPanel === 'moments' ? '' : 'none';
         document.getElementById('activity-filter').style.display = currentPanel === 'activities' ? '' : 'none';
       });
     });
@@ -432,7 +566,9 @@
       searchQuery = e.target.value.trim();
       renderAll();
     });
+    document.getElementById('time-order').addEventListener('change', renderAll);
     document.getElementById('moment-filter').addEventListener('change', renderMoments);
+    document.getElementById('duplicate-mode').addEventListener('change', renderMoments);
     document.getElementById('activity-filter').addEventListener('change', renderActivities);
 
     renderAll();

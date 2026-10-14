@@ -1,12 +1,16 @@
 package timeparse
 
 import (
+	"regexp"
 	"strings"
 	"time"
 )
 
 func ParseCN(timeStr string, defaultYear int) time.Time {
-	timeStr = strings.TrimSpace(timeStr)
+	timeStr = normalize(timeStr)
+	if absolute := ParseAbsolute(timeStr); !absolute.IsZero() {
+		return absolute
+	}
 	if timeStr == "" {
 		return time.Time{}
 	}
@@ -59,4 +63,36 @@ func RefYearFromEarliest(earliestUnix int64, targetYear int) int {
 		return targetYear
 	}
 	return time.Now().Year()
+}
+
+// QQ dates are expressed in Beijing time, independently of the machine zone.
+var qzoneLocation = time.FixedZone("Asia/Shanghai", 8*60*60)
+var absoluteDate = regexp.MustCompile("[0-9]{4}(?:年[0-9]{1,2}月[0-9]{1,2}日|-[0-9]{1,2}-[0-9]{1,2})(?:[ T][0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)?")
+
+func normalize(text string) string {
+	text = strings.NewReplacer("\\t", " ", "\\r", " ", "\\n", " ").Replace(text)
+	return strings.Join(strings.Fields(text), " ")
+}
+
+// ParseAbsolute parses only dates with an explicit year. Export sorting must
+// not invent a year for an old month/day or relative activity record.
+func ParseAbsolute(text string) time.Time {
+	text = normalize(text)
+	if parsed, err := time.Parse(time.RFC3339Nano, text); err == nil && parsed.Year() > 1 {
+		return parsed
+	}
+	text = absoluteDate.FindString(text)
+	if text == "" {
+		return time.Time{}
+	}
+	for _, layout := range []string{
+		"2006年1月2日 15:04:05", "2006年1月2日 15:04", "2006年1月2日",
+		"2006-1-2 15:04:05", "2006-1-2 15:04", "2006-1-2",
+		"2006-1-2T15:04:05", "2006-1-2T15:04",
+	} {
+		if parsed, err := time.ParseInLocation(layout, text, qzoneLocation); err == nil && parsed.Year() > 1 {
+			return parsed
+		}
+	}
+	return time.Time{}
 }

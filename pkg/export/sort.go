@@ -2,18 +2,19 @@ package export
 
 import (
 	"qzone-history/internal/domain/entity"
+	"qzone-history/pkg/timeparse"
 	"sort"
 	"time"
 )
 
 func SortMomentsDesc(items []entity.Moment) {
-	sort.Slice(items, func(i, j int) bool {
+	sort.SliceStable(items, func(i, j int) bool {
 		return momentTime(items[i]).After(momentTime(items[j]))
 	})
 }
 
 func SortBoardDesc(items []entity.BoardMessage) {
-	sort.Slice(items, func(i, j int) bool {
+	sort.SliceStable(items, func(i, j int) bool {
 		ti, tj := boardTime(items[i]), boardTime(items[j])
 		if ti.IsZero() && tj.IsZero() {
 			return false
@@ -29,7 +30,7 @@ func SortBoardDesc(items []entity.BoardMessage) {
 }
 
 func SortActivitiesDesc(items []entity.Activity) {
-	sort.Slice(items, func(i, j int) bool {
+	sort.SliceStable(items, func(i, j int) bool {
 		return activityTime(items[i]).After(activityTime(items[j]))
 	})
 }
@@ -49,19 +50,19 @@ func momentTime(m entity.Moment) time.Time {
 	if !m.Timestamp.IsZero() {
 		return m.Timestamp
 	}
-	return time.Time{}
+	return timeparse.ParseAbsolute(m.TimeText)
 }
 
 func boardTime(m entity.BoardMessage) time.Time {
 	if !m.Timestamp.IsZero() {
 		return m.Timestamp
 	}
-	return time.Time{}
+	return timeparse.ParseAbsolute(m.TimeText)
 }
 
 func activityTime(a entity.Activity) time.Time {
 	if !a.Timestamp.IsZero() {
 		return a.Timestamp
 	}
-	return time.Time{}
+	return timeparse.ParseAbsolute(a.TimeText)
 }

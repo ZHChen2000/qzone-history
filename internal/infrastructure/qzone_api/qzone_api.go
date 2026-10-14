@@ -74,6 +74,19 @@ func (c *qzoneAPIClient) doGet(ctx context.Context, cookies map[string]string, u
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	var cache *feedResponseCache
+	if cacheableFeedURL(url) {
+		cache = feedCacheFromContext(ctx)
+		if cache != nil {
+			if body, ok := cache.get(url); ok {
+				return body, nil
+			}
+			cache.request()
+		}
+	}
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -97,6 +110,9 @@ func (c *qzoneAPIClient) doGet(ctx context.Context, cookies map[string]string, u
 	}
 	if strings.Contains(string(body), "waf.tencent.com") {
 		return nil, fmt.Errorf("请求被腾讯 WAF 拦截")
+	}
+	if cache != nil && resp.StatusCode == http.StatusOK && cacheableFeedBody(body) {
+		cache.put(url, body)
 	}
 	return body, nil
 }
@@ -400,7 +416,19 @@ func (c *qzoneAPIClient) GetAllActivities(cookies map[string]string, opts FetchO
 	return c.getAllActivitiesWithOpts(fetchCtx(opts), cookies, opts, defaultReporter())
 }
 
-func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies map[string]string, opts FetchOptions, rep ProgressReporter) ([]*entity.Activity, error) {
+func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies map[string]string, opts FetchOptions, rep ProgressReporter) (result []*entity.Activity, scanErr error) {
+	scanCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	cache := newFeedResponseCache(32 * 1024 * 1024)
+	ctx = withFeedResponseCache(scanCtx, cache)
+	var persistenceErr error
+	defer func() {
+		if persistenceErr != nil {
+			scanErr = persistenceErr
+		}
+		hits, requests := cache.stats()
+		loghub.Default().Logf("本次扫描页面复用 %d 次，实际请求 %d 次（不同参数、空页与失败页不合并）", hits, requests)
+	}()
 	cookies = c.warmUpSession(cookies)
 	uin := utils.ExtractUin(cookies)
 	seen := make(map[string]struct{})
@@ -415,17 +443,29 @@ func (c *qzoneAPIClient) getAllActivitiesWithOpts(ctx context.Context, cookies m
 	}
 
 	appendUnique := func(batch []*entity.Activity) int {
-		added := 0
-		for _, a := range batch {
-			key := activityDedupKey(a)
+		if persistenceErr != nil {
+			return 0
+		}
+		newItems := make([]*entity.Activity, 0, len(batch))
+		for _, activity := range batch {
+			if activity == nil {
+				continue
+			}
+			key := activityDedupKey(activity)
 			if _, ok := seen[key]; ok {
 				continue
 			}
 			seen[key] = struct{}{}
-			allActivities = append(allActivities, a)
-			added++
+			allActivities = append(allActivities, activity)
+			newItems = append(newItems, activity)
 		}
-		return added
+		if len(newItems) > 0 && opts.OnBatch != nil {
+			if err := opts.OnBatch(newItems); err != nil {
+				persistenceErr = fmt.Errorf("保存扫描活动失败: %w", err)
+				cancel()
+			}
+		}
+		return len(newItems)
 	}
 
 	trackEarliest := func(raw string) {
